@@ -1,0 +1,139 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&family=Chakra+Petch:wght@600;700&family=Monoton&family=Orbitron:wght@500;700;900&family=Permanent+Marker&family=Press+Start+2P&family=Rajdhani:wght@500;600;700&family=Russo+One&family=Share+Tech+Mono&family=VT323&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@layer base {
+  body {
+    background-color: #0b0714;
+    color: #f3f4f6;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-image: 
+      radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.18), transparent 50%),
+      radial-gradient(circle at 85% 20%, rgba(236, 72, 153, 0.12), transparent 45%),
+      radial-gradient(circle at 15% 80%, rgba(147, 51, 234, 0.15), transparent 45%),
+      linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  }
+
+  .font-orbitron {
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .font-rajdhani {
+    font-family: 'Rajdhani', sans-serif;
+  }
+
+  .font-press-start {
+    font-family: 'Press Start 2P', cursive;
+  }
+
+  .font-audiowide {
+    font-family: 'Audiowide', cursive;
+  }
+
+  .font-monoton {
+    font-family: 'Monoton', cursive;
+  }
+
+  .font-chakra {
+    font-family: 'Chakra Petch', sans-serif;
+  }
+
+  .font-permanent {
+    font-family: 'Permanent Marker', cursive;
+  }
+
+  .font-vt323 {
+    font-family: 'VT323', monospace;
+  }
+
+  .font-share-tech {
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .font-russo {
+    font-family: 'Russo One', sans-serif;
+  }
+}
+
+/* Custom Marquee Animation */
+@keyframes continuousMarquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: continuousMarquee linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Custom Neon Purple Glow Utilities */
+.shadow-neo-purple {
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.35), inset 0 0 10px rgba(168, 85, 247, 0.15);
+}
+
+.shadow-neo-purple-lg {
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.45), inset 0 0 12px rgba(168, 85, 247, 0.2);
+}
+
+.shadow-neo-gold {
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35), inset 0 0 8px rgba(168, 85, 247, 0.15);
+}
+
+.shadow-neo-gold-lg {
+  box-shadow: 0 0 22px rgba(168, 85, 247, 0.45), inset 0 0 10px rgba(168, 85, 247, 0.2);
+}
+
+.shadow-neo-green {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.shadow-neo-rose {
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.3);
+}
+
+.shadow-neo-indigo {
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
+}
+
+/* Metallic Neon Purple & Fuchsia Text & Border Effects */
+.text-cyber-gold {
+  background: linear-gradient(180deg, #faf5ff 0%, #d8b4fe 40%, #c084fc 70%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-neon-purple {
+  background: linear-gradient(180deg, #f472b6 0%, #c084fc 50%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.border-cyber-gold {
+  border-color: rgba(168, 85, 247, 0.35);
+}
+
+/* Pulse Glow Animation */
+@keyframes neonPulse {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.6));
+  }
+  50% {
+    opacity: 0.5;
+    filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.3));
+  }
+}
+
+.animate-neon-pulse {
+  animation: neonPulse 2s infinite ease-in-out;
+}
