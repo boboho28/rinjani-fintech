@@ -1,237 +1,262 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
+  LayoutDashboard, 
+  Receipt, 
+  PieChart, 
+  TrendingUp, 
+  Scale, 
   Coins, 
-  PlusCircle, 
-  Sparkles, 
-  CheckCircle2, 
-  Clock, 
-  Briefcase, 
-  Building, 
-  ArrowUpRight, 
-  Edit3, 
-  Trash2,
-  Receipt
+  Sparkles,
+  LogOut,
+  Sliders,
+  Bell,
+  Activity,
+  User,
+  ShieldCheck,
+  Award,
+  CandlestickChart,
+  Target,
+  PiggyBank
 } from 'lucide-react';
-import { SalaryBonus, IncomeSourceType } from '../types';
-import { formatRupiah, formatDateIndo } from '../utils/formatters';
+import { ActiveTab } from '../types';
 
-interface SalaryBonusViewProps {
-  salaries: SalaryBonus[];
-  onAddSalary: () => void;
-  onEditSalary: (item: SalaryBonus) => void;
-  onDeleteSalary: (id: string) => void;
-  onClaimToJournal: (item: SalaryBonus) => void;
+interface SidebarNavigationProps {
+  activeTab: ActiveTab;
+  setActiveTab: (tab: ActiveTab) => void;
   onOpenAIModal: () => void;
+  onOpenRateModal?: () => void;
+  onOpenCryptoModal?: () => void;
+  onOpenGoldModal?: () => void;
+  onLogout?: () => void;
+  debtCount?: number;
+  pendingBonusCount?: number;
+  unclaimedTradingCount?: number;
+  activeGoalsCount?: number;
 }
 
-export const SalaryBonusView: React.FC<SalaryBonusViewProps> = ({
-  salaries,
-  onAddSalary,
-  onEditSalary,
-  onDeleteSalary,
-  onClaimToJournal,
+export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
+  activeTab,
+  setActiveTab,
   onOpenAIModal,
+  onOpenRateModal,
+  onOpenCryptoModal,
+  onOpenGoldModal,
+  onLogout,
+  debtCount = 0,
+  pendingBonusCount = 0,
+  unclaimedTradingCount = 0,
+  activeGoalsCount = 0,
 }) => {
-  const [selectedType, setSelectedType] = useState<string>('all');
-
-  const filteredSalaries = salaries.filter(
-    (item) => selectedType === 'all' || item.type === selectedType
-  );
-
-  const totalNettReceived = salaries
-    .filter((s) => s.status === 'diterima')
-    .reduce((sum, s) => sum + s.nettAmount, 0);
-
-  const totalPendingScheduled = salaries
-    .filter((s) => s.status === 'dijadwalkan')
-    .reduce((sum, s) => sum + s.nettAmount, 0);
+  const menuItems = [
+    {
+      id: 'dashboard' as ActiveTab,
+      label: 'DASHBOARD RINJANI',
+      sublabel: 'Saldo Harian Real-time',
+      icon: LayoutDashboard,
+      badge: 'LIVE',
+      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_#10b981]',
+    },
+    {
+      id: 'jurnal' as ActiveTab,
+      label: 'SERAH TERIMA KAS',
+      sublabel: 'Arus Keluar Masuk Duit',
+      icon: Receipt,
+      badge: null,
+    },
+    {
+      id: 'laporan' as ActiveTab,
+      label: 'DATA REPORTAN',
+      sublabel: 'Ringkasan & Analisis',
+      icon: PieChart,
+      badge: null,
+    },
+    {
+      id: 'investasi' as ActiveTab,
+      label: 'PORTOFOLIO SAHAM',
+      sublabel: 'Saham, Emas & Crypto',
+      icon: TrendingUp,
+      badge: null,
+    },
+    {
+      id: 'hutang_piutang' as ActiveTab,
+      label: 'HUTANG & PIUTANG',
+      sublabel: 'Pantau Cicilan & Pinjaman',
+      icon: Scale,
+      badge: debtCount > 0 ? `${debtCount} ACTIVE` : null,
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-[0_0_6px_rgba(245,158,11,0.3)]',
+    },
+    {
+      id: 'gaji_bonus' as ActiveTab,
+      label: 'GAJI & BONUS KERJA',
+      sublabel: 'Incomes & Klaim Saldo',
+      icon: Coins,
+      badge: pendingBonusCount > 0 ? `${pendingBonusCount} KLAIM` : null,
+      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]',
+    },
+    {
+      id: 'trading' as ActiveTab,
+      label: 'JURNAL TRADING',
+      sublabel: 'Forex, Gold & Crypto PnL',
+      icon: CandlestickChart,
+      badge: unclaimedTradingCount > 0 ? `${unclaimedTradingCount} PROFIT` : 'FOREX',
+      badgeColor: 'bg-gradient-to-r from-purple-500/30 to-fuchsia-500/30 text-fuchsia-300 border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.35)]',
+    },
+    {
+      id: 'tabungan' as ActiveTab,
+      label: 'TABUNGAN & TARGET',
+      sublabel: 'Rencana Impian Financial',
+      icon: Target,
+      badge: activeGoalsCount > 0 ? `${activeGoalsCount} TARGET` : 'IMPIAN',
+      badgeColor: 'bg-gradient-to-r from-emerald-500/30 to-teal-500/30 text-teal-300 border-teal-500/40 shadow-[0_0_10px_rgba(20,184,166,0.35)]',
+    },
+  ];
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#130b20]/80 border border-purple-500/30 rounded-2xl p-6 shadow-neo-purple">
-        <div>
-          <div className="flex items-center gap-2 text-purple-300 text-xs font-orbitron font-bold uppercase tracking-wider mb-1">
-            <Coins className="w-4 h-4" />
-            <span>Menu 6. Bonus Kerja, Gaji Pokok & Income</span>
+    <aside className="w-full lg:w-80 bg-[#0c0717] border-b lg:border-b-0 lg:border-r border-purple-500/25 p-4 lg:p-5 shrink-0 flex flex-col justify-between shadow-[4px_0_20px_rgba(168,85,247,0.08)] lg:sticky lg:top-[112px] lg:h-[calc(100vh-112px)] overflow-y-auto">
+      <div className="space-y-4">
+        
+        {/* System Header Card (Clean Rinjani System Badge) */}
+        <div className="bg-[#140b24] border border-purple-500/35 rounded-2xl p-3 space-y-2 shadow-[0_0_12px_rgba(168,85,247,0.15)]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-700 via-fuchsia-500 to-pink-400 p-0.5 shadow-neo-purple">
+              <div className="w-full h-full bg-[#120a21] rounded-[10px] flex items-center justify-center">
+                <span className="font-orbitron font-extrabold text-fuchsia-300 text-sm">R</span>
+              </div>
+            </div>
+            <div className="overflow-hidden">
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-orbitron font-bold text-xs text-purple-100 truncate tracking-wide">RINJANI SYSTEM</h3>
+                <span className="w-2 h-2 rounded-full bg-fuchsia-400 shadow-[0_0_8px_#e879f9] animate-pulse shrink-0" />
+              </div>
+              <p className="text-[10px] font-mono text-purple-300/70 truncate">SYSTEM SECURE ACTIVE</p>
+            </div>
           </div>
-          <h2 className="text-xl font-orbitron font-black text-neon-purple tracking-wide">
-            Catatan Gaji, Insentif & Bonus Kerja
-          </h2>
-          <p className="text-xs text-purple-200/70 font-rajdhani font-semibold mt-1">
-            Rekam penerimaan slip gaji, bonus proyek, lembur, dan klaim langsung ke saldo harian.
+          
+          <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between text-[10px] font-orbitron text-purple-300/70">
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-emerald-400" /> SYSTEM ONLINE
+            </span>
+            <span className="bg-purple-500/20 text-fuchsia-300 border border-purple-500/40 px-1.5 py-0.5 rounded font-mono text-[9px]">
+              v2.5 NEON
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Cyber Tools Badges Grid (Rate / Crypto / Gold) */}
+        <div className="grid grid-cols-3 gap-1.5 pt-1">
+          <div 
+            onClick={onOpenRateModal}
+            className="bg-[#140b24] border border-purple-500/30 rounded-lg p-1.5 text-center flex flex-col items-center justify-center hover:border-purple-400/60 transition-all cursor-pointer group"
+          >
+            <Activity className="w-3.5 h-3.5 text-fuchsia-400 mb-0.5 group-hover:scale-110 transition-transform" />
+            <span className="text-[8px] font-orbitron text-purple-200/80 uppercase font-bold leading-tight group-hover:text-purple-100">RATE</span>
+          </div>
+          <div 
+            onClick={onOpenCryptoModal}
+            className="bg-[#140b24] border border-purple-500/30 rounded-lg p-1.5 text-center flex flex-col items-center justify-center hover:border-purple-400/60 transition-all cursor-pointer group"
+          >
+            <Coins className="w-3.5 h-3.5 text-purple-400 mb-0.5 group-hover:scale-110 transition-transform" />
+            <span className="text-[8px] font-orbitron text-purple-200/80 uppercase font-bold leading-tight group-hover:text-purple-100">CRYPTO</span>
+          </div>
+          <div 
+            onClick={onOpenGoldModal}
+            className="bg-[#140b24] border border-purple-500/30 rounded-lg p-1.5 text-center flex flex-col items-center justify-center hover:border-purple-400/60 transition-all cursor-pointer group"
+          >
+            <Award className="w-3.5 h-3.5 text-pink-400 mb-0.5 group-hover:scale-110 transition-transform" />
+            <span className="text-[8px] font-orbitron text-purple-200/80 uppercase font-bold leading-tight group-hover:text-purple-100">GOLD</span>
+          </div>
+        </div>
+
+        {/* Navigation Category Label */}
+        <div className="px-1 pt-2">
+          <p className="text-[10px] font-orbitron font-bold uppercase tracking-widest text-purple-300/70">
+            MAIN ACCESS MENU
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={onAddSalary}
-            className="bg-gradient-to-r from-purple-600 via-fuchsia-500 to-purple-700 hover:from-purple-500 hover:to-fuchsia-400 text-white font-orbitron font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-neo-purple transition-all cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Tambah Slip Gaji / Bonus</span>
-          </button>
+        {/* Cyber Pill Tab Buttons */}
+        <nav className="grid grid-cols-1 gap-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full text-left px-3 py-2.5 rounded-xl transition-all flex items-center justify-between group cursor-pointer ${
+                  isActive
+                    ? 'bg-gradient-to-r from-purple-600/35 via-fuchsia-600/25 to-purple-800/30 text-white border-2 border-fuchsia-400 shadow-[0_0_20px_rgba(217,70,239,0.35)]'
+                    : 'text-purple-200/70 hover:text-white hover:bg-purple-500/15 border border-purple-500/20 hover:border-purple-400/40'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-2 rounded-lg transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-tr from-purple-500 via-fuchsia-500 to-pink-500 text-white font-black shadow-[0_0_12px_rgba(217,70,239,0.6)]'
+                        : 'bg-[#160d29] text-fuchsia-400 border border-purple-500/30 group-hover:text-fuchsia-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className={`text-xs font-orbitron font-bold tracking-wider ${isActive ? 'text-fuchsia-300 drop-shadow-[0_0_6px_rgba(217,70,239,0.5)]' : 'text-slate-200'}`}>
+                      {item.label}
+                    </p>
+                    <p className="text-[10px] text-purple-300/60 font-rajdhani font-semibold truncate max-w-[140px]">
+                      {item.sublabel}
+                    </p>
+                  </div>
+                </div>
+
+                {item.badge && (
+                  <span
+                    className={`px-2 py-0.5 text-[9px] font-orbitron font-bold rounded-md border ${item.badgeColor}`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Cyber AI Assistant & Logout Box */}
+      <div className="mt-6 pt-4 border-t border-purple-500/20 space-y-3">
+        <div className="bg-[#140b24] border border-purple-500/35 rounded-xl p-3 space-y-2 relative overflow-hidden shadow-[inset_0_0_15px_rgba(168,85,247,0.15)]">
+          <div className="flex items-center gap-2 text-purple-200">
+            <Sparkles className="w-4 h-4 text-fuchsia-400 animate-pulse" />
+            <h4 className="text-xs font-orbitron font-bold text-white">RINJANI AI ASSISTANT</h4>
+          </div>
+          
+          <p className="text-[10px] text-purple-200/80 leading-relaxed font-rajdhani font-medium">
+            Analisis kas harian, rekomendasi hemat, dan prediksi portofolio otomatis!
+          </p>
 
           <button
             onClick={onOpenAIModal}
-            className="bg-[#1a0f30] hover:bg-purple-500/20 text-purple-300 border border-purple-500/40 font-orbitron font-bold text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-neo-purple"
+            className="w-full bg-gradient-to-r from-purple-600 via-fuchsia-500 to-purple-700 hover:from-purple-500 hover:to-fuchsia-400 text-white font-orbitron font-bold text-xs py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-neo-purple border border-fuchsia-300/30 cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-fuchsia-400" />
-            <span>Optimasi Income AI</span>
+            <Sparkles className="w-3.5 h-3.5 fill-white text-white" />
+            <span>KONSULTASI AI</span>
           </button>
         </div>
+
+        {/* Logout Button Fixed */}
+        <button
+          onClick={() => {
+            if (window.confirm("Apakah Anda yakin ingin keluar dari RINJANI System?")) {
+              onLogout?.();
+            }
+          }}
+          className="w-full bg-[#180a0a] hover:bg-rose-950/60 border border-rose-500/40 hover:border-rose-400 text-rose-400 font-orbitron font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_12px_rgba(244,63,94,0.2)] cursor-pointer active:scale-95"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>LOGOUT SYSTEM</span>
+        </button>
       </div>
-
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-[#130b20]/80 border border-purple-500/30 rounded-2xl p-5 flex items-center justify-between shadow-neo-purple">
-          <div>
-            <p className="text-xs font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Total Gaji & Bonus Diterima</p>
-            <p className="text-2xl font-mono font-black text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.5)] mt-1">{formatRupiah(totalNettReceived)}</p>
-            <p className="text-[11px] text-purple-200/60 font-rajdhani font-semibold mt-0.5">Pendapatan yang sudah cair dan masuk kas</p>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-[#130b20]/80 border border-purple-500/30 rounded-2xl p-5 flex items-center justify-between shadow-neo-purple">
-          <div>
-            <p className="text-xs font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Dijadwalkan / Belum Cair</p>
-            <p className="text-2xl font-mono font-black text-purple-300 drop-shadow-[0_0_6px_rgba(168,85,247,0.5)] mt-1">{formatRupiah(totalPendingScheduled)}</p>
-            <p className="text-[11px] text-purple-200/60 font-rajdhani font-semibold mt-0.5">Estimasi pencairan gaji/bonus di depan</p>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/30">
-            <Clock className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-
-      {/* Salary & Bonus Cards Feed */}
-      <div className="space-y-5">
-        {filteredSalaries.map((item) => (
-          <div
-            key={item.id}
-            className="relative bg-[#130b20]/80 border border-purple-500/30 hover:border-purple-400 rounded-2xl p-6 space-y-4 shadow-neo-purple transition-all overflow-hidden group"
-          >
-            {/* Top subtle purple highlight line */}
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/70 to-transparent" />
-
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 uppercase tracking-wider shadow-neo-purple">
-                    {item.type.replace('_', ' ')}
-                  </span>
-                  <span className="text-xs font-orbitron font-bold text-purple-200/80 bg-[#1a0f30] border border-purple-500/30 px-3 py-1 rounded-lg">
-                    {item.period}
-                  </span>
-                  <span
-                    className={`px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg border flex items-center gap-1.5 ${
-                      item.status === 'diterima'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
-                        : 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-neo-purple'
-                    }`}
-                  >
-                    {item.status === 'diterima' ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Diterima / Cair</span>
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="w-3.5 h-3.5 text-purple-400" />
-                        <span>Dijadwalkan</span>
-                      </>
-                    )}
-                  </span>
-                </div>
-
-                <h3 className="font-orbitron font-bold text-lg sm:text-xl text-purple-100 tracking-wide group-hover:text-purple-300 transition-colors">
-                  {item.title}
-                </h3>
-                
-                <div className="flex items-center gap-2 text-xs text-purple-300/80 font-rajdhani font-semibold">
-                  <div className="flex items-center gap-1.5 bg-[#1a0f30] px-2.5 py-1 rounded-md border border-purple-500/20">
-                    <Building className="w-3.5 h-3.5 text-purple-400" />
-                    <span className="text-purple-200">{item.sourceCompany}</span>
-                  </div>
-                  <span className="text-purple-500/50">•</span>
-                  <span className="text-purple-200/70 font-mono">{formatDateIndo(item.date)}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center sm:items-end justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-purple-500/20 pt-3 sm:pt-0">
-                <div className="text-left sm:text-right">
-                  <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-widest">
-                    Nett Diterima
-                  </p>
-                  <p className="text-xl sm:text-2xl font-mono font-black text-neon-purple mt-0.5">
-                    {formatRupiah(item.nettAmount)}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onEditSalary(item)}
-                    title="Edit Slip Gaji"
-                    className="p-2.5 rounded-xl bg-[#1a0f30] hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-400/60 transition-all cursor-pointer shadow-sm"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onDeleteSalary(item.id)}
-                    title="Hapus Slip Gaji"
-                    className="p-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/40 hover:border-rose-400 transition-all cursor-pointer shadow-sm"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Salary Breakdown Details Box */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#1a0f30] p-4 rounded-xl border border-purple-500/30">
-              <div className="sm:border-r sm:border-purple-500/15 sm:pr-3">
-                <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Gaji Pokok</p>
-                <p className="font-mono font-bold text-sm text-purple-100 mt-1">{formatRupiah(item.baseAmount)}</p>
-              </div>
-              <div className="sm:border-r sm:border-purple-500/15 sm:pr-3">
-                <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Bonus / Insentif</p>
-                <p className="font-mono font-bold text-sm text-emerald-400 mt-1">+{formatRupiah(item.bonusAmount)}</p>
-              </div>
-              <div className="sm:border-r sm:border-purple-500/15 sm:pr-3">
-                <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Potongan (Pajak/BPJS)</p>
-                <p className="font-mono font-bold text-sm text-rose-400 mt-1">-{formatRupiah(item.deductions)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Total Bersih</p>
-                <p className="font-mono font-black text-sm text-neon-purple mt-1">{formatRupiah(item.nettAmount)}</p>
-              </div>
-            </div>
-
-            {item.notes && (
-              <div className="bg-[#1a0f30] border-l-4 border-purple-500 rounded-r-xl p-3 text-xs font-rajdhani font-semibold text-purple-200/90 italic flex items-start gap-2.5">
-                <Receipt className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                <span>"{item.notes}"</span>
-              </div>
-            )}
-
-            {/* Claim to Journal Action */}
-            {!item.isClaimedToJournal && (
-              <button
-                onClick={() => onClaimToJournal(item)}
-                className="w-full bg-gradient-to-r from-purple-600 via-fuchsia-500 to-purple-700 hover:from-purple-500 hover:to-fuchsia-400 text-white font-orbitron font-black text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-neo-purple transition-all cursor-pointer"
-              >
-                <Receipt className="w-4 h-4 text-white font-bold" />
-                <span>Klaim & Masukkan Langsung ke Saldo Kas Real-Time Jurnal</span>
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-    </div>
+    </aside>
   );
 };
