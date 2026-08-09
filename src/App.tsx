@@ -31,7 +31,7 @@ import { JournalView } from './components/JournalView';
 import { MonthlyReportView } from './components/MonthlyReportView';
 import { InvestmentsView } from './components/InvestmentsView';
 import { DebtView } from './components/DebtView';
-import { SalaryBonusView } from './components/SalaryBonusView';
+import { SalaryBonusView } from './components/SalaryBonusView'; // Pastikan Import Ini Sesuai
 import { TradingJournalView } from './components/TradingJournalView';
 import { SavingsGoalsView } from './components/SavingsGoalsView';
 import { AuthView } from './components/AuthView';
@@ -236,7 +236,7 @@ export default function App() {
     }
   };
 
-  // Calculations
+  // Shared Calculations
   const totalBalance = transactions.reduce((acc, tx) => tx.type === 'income' ? acc + tx.amount : acc - tx.amount, 0);
   const totalInv = investments.reduce((acc, inv) => acc + (inv.currentPrice * inv.shares), 0);
   const totalHutang = debts.filter(d => d.type === 'hutang').reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
@@ -262,7 +262,6 @@ export default function App() {
   return (
     <div className="h-screen bg-[#0a0512] text-purple-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white overflow-hidden">
       
-      {/* 1. Navbar (Sticky) */}
       <HeaderNavbar
         activeTab={activeTab} setActiveTab={setActiveTab} totalBalance={totalBalance} netWorth={netWorth}
         onOpenAddModal={() => { setEditingTx(null); setIsAddTxModalOpen(true); }}
@@ -271,13 +270,10 @@ export default function App() {
         onResetDemo={() => alert("Gunakan Firestore Console untuk reset data cloud.")}
       />
       
-      {/* 2. Ticker (Sticky) */}
       <RunningTickerBanner settings={marqueeSettings} onOpenSettingsModal={() => setIsTickerModalOpen(true)} />
       
-      {/* 3. Main Content Wrapper */}
       <div className="flex-1 w-full flex flex-col lg:flex-row min-h-0 overflow-hidden">
         
-        {/* Sidebar Navigation */}
         <SidebarNavigation
           activeTab={activeTab} setActiveTab={setActiveTab} onOpenAIModal={() => setIsAIModalOpen(true)}
           onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
@@ -286,7 +282,6 @@ export default function App() {
           unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
         />
 
-        {/* --- MAIN SCROLLABLE AREA --- */}
         <main className="flex-1 overflow-y-auto w-full min-w-0 p-0 sm:p-0 lg:p-0">
           <div className="p-3 sm:p-4 lg:p-5">
             {activeTab === 'dashboard' && <DashboardView transactions={transactions} investments={investments} debts={debts} totalBalance={totalBalance} netWorth={netWorth} onOpenAddModal={() => setIsAddTxModalOpen(true)} onOpenAIModal={() => setIsAIModalOpen(true)} onNavigateToTab={setActiveTab} />}
