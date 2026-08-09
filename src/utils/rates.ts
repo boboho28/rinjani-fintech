@@ -1,6 +1,4 @@
 // PUSAT DATA KURS & HARGA REAL-TIME RINJANI SYSTEM
-// Update angka di sini untuk mengubah harga di seluruh aplikasi secara instan
-
 export const GLOBAL_RATES = {
   // Kurs Utama
   USD_IDR: 16280, // 1 USD ke Rupiah
@@ -26,7 +24,5 @@ export const GLOBAL_RATES = {
   ]
 };
 
-// Helper untuk menghitung konversi
 export const convertUsdToIdr = (usd: number) => usd * GLOBAL_RATES.USD_IDR;
-export const convertIdrToUsd = (idr: number) => idr / GLOBAL_RATES.USD_IDR;
 export const getGoldSpotIdrPerGram = () => (GLOBAL_RATES.GOLD_XAU_USD * GLOBAL_RATES.USD_IDR) / GLOBAL_RATES.TROY_OUNCE_TO_GRAM;
