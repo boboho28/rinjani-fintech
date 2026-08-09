@@ -89,7 +89,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Firestore Sync Listener
+  // 2. Firestore Sync Listener (Real-time)
   useEffect(() => {
     if (!user) return;
     const docRef = doc(db, 'users', user.uid, 'settings', 'appData');
@@ -120,7 +120,7 @@ export default function App() {
     }
   };
 
-  // 4. Logout
+  // 4. Logout Function
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -137,7 +137,7 @@ export default function App() {
   const updateSavingsGoals = (newList: SavingsGoal[]) => { setSavingsGoals(newList); syncToCloud({ savingsGoals: newList }); };
   const handleSaveMarqueeSettings = (newSettings: MarqueeSettings) => { setMarqueeSettings(newSettings); syncToCloud({ marquee: newSettings }); };
 
-  // Logic Handlers
+  // Handlers
   const handleSaveTransaction = (txData: Omit<Transaction, 'id'>, editId?: string) => {
     if (editId) updateTransactions(transactions.map((t) => (t.id === editId ? { ...txData, id: editId } : t)));
     else updateTransactions([{ ...txData, id: `tx-${Date.now()}` }, ...transactions]);
@@ -157,7 +157,7 @@ export default function App() {
     else updateDebts([...debts, { ...debtData, id: `debt-${Date.now()}`, payments: [] }]);
     setEditingDebt(null);
   };
-  const handleDeleteDebt = (id: string) => { if (window.confirm('Hapus hutang?')) updateDebts(debts.filter((d) => d.id !== id)); };
+  const handleDeleteDebt = (id: string) => { if (window.confirm('Hapus catatan?')) updateDebts(debts.filter((d) => d.id !== id)); };
 
   const handlePayDebt = (debtId: string, paymentAmount: number, note: string) => {
     const targetDebt = debts.find((d) => d.id === debtId);
@@ -168,7 +168,8 @@ export default function App() {
     else if (newPaidAmount > 0) newStatus = 'sebagian';
     const newPaymentObj = { id: `pay-${Date.now()}`, date: new Date().toISOString().slice(0, 10), amount: paymentAmount, note };
     updateDebts(debts.map((d) => d.id === debtId ? { ...d, paidAmount: newPaidAmount, status: newStatus, payments: [...d.payments, newPaymentObj] } : d));
-    updateTransactions([{ id: `tx-${Date.now()}`, date: new Date().toISOString().slice(0, 10), description: `Bayar: ${targetDebt.title}`, amount: paymentAmount, type: targetDebt.type === 'hutang' ? 'expense' : 'income', category: 'Tagihan & Utilitas', account: 'Bank BCA', note }, ...transactions]);
+    const journalType = targetDebt.type === 'hutang' ? 'expense' : 'income';
+    updateTransactions([{ id: `tx-${Date.now()}`, date: new Date().toISOString().slice(0, 10), description: `Bayar: ${targetDebt.title}`, amount: paymentAmount, type: journalType, category: 'Tagihan & Utilitas', account: 'Bank BCA', note }, ...transactions]);
   };
 
   const handleSaveSalary = (salData: Omit<SalaryBonus, 'id'>, editId?: string) => {
@@ -196,7 +197,6 @@ export default function App() {
     updateTradings(tradings.map((t) => t.id === tradingItem.id ? { ...t, isClaimedToJournal: true } : t));
   };
 
-  // FUNGSI INI HARUS ADA UNTUK DIPASS KE TRADING VIEW
   const handleBatchClaimTradingToJournal = (items: TradingJournalItem[], bank: AccountType, summaryTitle?: string) => {
     const validItems = items.filter((t) => t.profitAmount > 0 && !t.isClaimedToJournal);
     if (validItems.length === 0) return;
@@ -244,7 +244,7 @@ export default function App() {
       <div className="min-h-screen bg-[#0a0512] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-10 h-10 text-fuchsia-500 animate-spin" />
-          <p className="font-orbitron text-xs text-purple-300 tracking-[0.2em]">INITIALIZING CLOUD...</p>
+          <p className="font-orbitron text-xs text-purple-300 tracking-[0.2em]">INITIALIZING SECURE CLOUD...</p>
         </div>
       </div>
     );
@@ -253,11 +253,14 @@ export default function App() {
   if (!user) return <AuthView />;
 
   return (
-    <div className="min-h-screen bg-[#0a0512] text-purple-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0a0512] text-purple-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white">
       <HeaderNavbar activeTab={activeTab} setActiveTab={setActiveTab} totalBalance={totalBalance} netWorth={netWorth} onOpenAddModal={() => { setEditingTx(null); setIsAddTxModalOpen(true); }} onOpenAIModal={() => setIsAIModalOpen(true)} onExportData={() => exportBackupJSON({ transactions, investments, debts, salaries, budgets, tradings, savingsGoals })} onResetDemo={() => alert("Gunakan Firestore Console untuk reset data cloud.")} />
+      
       <RunningTickerBanner settings={marqueeSettings} onOpenSettingsModal={() => setIsTickerModalOpen(true)} />
+      
       <div className="flex-1 w-full flex flex-col lg:flex-row relative">
         <SidebarNavigation activeTab={activeTab} setActiveTab={setActiveTab} onOpenAIModal={() => setIsAIModalOpen(true)} onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)} onLogout={handleLogout} debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length} unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length} />
+        
         <main className="flex-1 w-full min-w-0 p-3 sm:p-4 lg:p-5">
            {activeTab === 'dashboard' && <DashboardView transactions={transactions} investments={investments} debts={debts} totalBalance={totalBalance} netWorth={netWorth} onOpenAddModal={() => setIsAddTxModalOpen(true)} onOpenAIModal={() => setIsAIModalOpen(true)} onNavigateToTab={setActiveTab} />}
            {activeTab === 'jurnal' && <JournalView transactions={transactions} onAddTransaction={() => setIsAddTxModalOpen(true)} onEditTransaction={(tx) => { setEditingTx(tx); setIsAddTxModalOpen(true); }} onDeleteTransaction={handleDeleteTransaction} onOpenAIModal={() => setIsAIModalOpen(true)} />}
@@ -269,6 +272,7 @@ export default function App() {
            {activeTab === 'tabungan' && <SavingsGoalsView savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onEditGoal={updateSavingsGoals} onDeleteGoal={(id) => updateSavingsGoals(savingsGoals.filter(g => g.id !== id))} onAddDeposit={handleAddDeposit} onDeleteDeposit={() => {}} />}
         </main>
       </div>
+
       <AddTransactionModal isOpen={isAddTxModalOpen} onClose={() => { setIsAddTxModalOpen(false); setEditingTx(null); }} onSave={handleSaveTransaction} editingTransaction={editingTx} />
       <AddInvestmentModal isOpen={isAddInvModalOpen} onClose={() => { setIsAddInvModalOpen(false); setEditingInv(null); }} onSave={handleSaveInvestment} editingInvestment={editingInv} />
       <AddDebtModal isOpen={isAddDebtModalOpen} onClose={() => { setIsAddDebtModalOpen(false); setEditingDebt(null); }} onSave={handleSaveDebt} editingDebt={editingDebt} />
