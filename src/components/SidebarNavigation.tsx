@@ -27,6 +27,7 @@ interface SidebarNavigationProps {
   onOpenRateModal?: () => void;
   onOpenCryptoModal?: () => void;
   onOpenGoldModal?: () => void;
+  onLogout?: () => void; // Tambahkan prop logout
   debtCount?: number;
   pendingBonusCount?: number;
   unclaimedTradingCount?: number;
@@ -40,6 +41,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   onOpenRateModal,
   onOpenCryptoModal,
   onOpenGoldModal,
+  onLogout,
   debtCount = 0,
   pendingBonusCount = 0,
   unclaimedTradingCount = 0,
@@ -242,10 +244,14 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           </button>
         </div>
 
-        {/* Cyber Logout Button matching bottom screenshot */}
+        {/* Logout Button Fixed */}
         <button
-          onClick={() => alert("RINJANI System is locked. Active session safe.")}
-          className="w-full bg-[#180a0a] hover:bg-rose-950/60 border border-rose-500/40 hover:border-rose-400 text-rose-400 font-orbitron font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_12px_rgba(244,63,94,0.2)] cursor-pointer"
+          onClick={() => {
+            if (window.confirm("Apakah Anda yakin ingin keluar dari RINJANI System?")) {
+              onLogout?.();
+            }
+          }}
+          className="w-full bg-[#180a0a] hover:bg-rose-950/60 border border-rose-500/40 hover:border-rose-400 text-rose-400 font-orbitron font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_12px_rgba(244,63,94,0.2)] cursor-pointer active:scale-95"
         >
           <LogOut className="w-4 h-4" />
           <span>LOGOUT SYSTEM</span>
