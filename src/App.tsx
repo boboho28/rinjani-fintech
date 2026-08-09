@@ -15,7 +15,7 @@ import {
 
 // Firebase Imports
 import { auth, db } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 import { 
@@ -117,6 +117,22 @@ export default function App() {
       await setDoc(docRef, updates, { merge: true });
     } catch (err) {
       console.error("Cloud Sync Error:", err);
+    }
+  };
+
+  // 4. Logout Function
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // Reset local state after logout for safety
+      setTransactions([]);
+      setInvestments([]);
+      setDebts([]);
+      setSalaries([]);
+      setTradings([]);
+      setSavingsGoals([]);
+    } catch (err) {
+      console.error("Logout Error:", err);
     }
   };
 
@@ -266,6 +282,7 @@ export default function App() {
         <SidebarNavigation
           activeTab={activeTab} setActiveTab={setActiveTab} onOpenAIModal={() => setIsAIModalOpen(true)}
           onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
+          onLogout={handleLogout} // Kirim fungsi logout ke Sidebar
           debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length}
           unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
         />
