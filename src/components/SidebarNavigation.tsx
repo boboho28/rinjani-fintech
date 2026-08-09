@@ -27,7 +27,7 @@ interface SidebarNavigationProps {
   onOpenRateModal?: () => void;
   onOpenCryptoModal?: () => void;
   onOpenGoldModal?: () => void;
-  onLogout?: () => void; // Tambahkan prop logout
+  onLogout?: () => void;
   debtCount?: number;
   pendingBonusCount?: number;
   unclaimedTradingCount?: number;
@@ -112,7 +112,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   ];
 
   return (
-    <aside className="w-full lg:w-80 bg-[#0c0717] border-b lg:border-b-0 lg:border-r border-purple-500/25 p-4 lg:p-5 shrink-0 flex flex-col justify-between shadow-[4px_0_20px_rgba(168,85,247,0.08)]">
+    <aside className="w-full lg:w-80 bg-[#0c0717] border-b lg:border-b-0 lg:border-r border-purple-500/25 p-4 lg:p-5 shrink-0 flex flex-col justify-between shadow-[4px_0_20px_rgba(168,85,247,0.08)] lg:sticky lg:top-[112px] lg:h-[calc(100vh-112px)] overflow-y-auto">
       <div className="space-y-4">
         
         {/* System Header Card (Clean Rinjani System Badge) */}
