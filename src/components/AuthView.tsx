@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut 
+  createUserWithEmailAndPassword 
 } from 'firebase/auth';
 import { 
   ShieldCheck, 
@@ -12,7 +11,8 @@ import {
   UserPlus, 
   LogIn, 
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 
 export const AuthView: React.FC = () => {
@@ -34,7 +34,11 @@ export const AuthView: React.FC = () => {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan sistem.');
+      console.error(err);
+      if (err.code === 'auth/user-not-found') setError('Email tidak terdaftar.');
+      else if (err.code === 'auth/wrong-password') setError('Password salah.');
+      else if (err.code === 'auth/email-already-in-use') setError('Email sudah digunakan.');
+      else setError('Terjadi kesalahan akses sistem. Pastikan koneksi internet aktif.');
     } finally {
       setLoading(false);
     }
@@ -42,6 +46,7 @@ export const AuthView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0512] flex items-center justify-center p-4">
+      {/* Background Decor */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-600/10 rounded-full blur-[120px]" />
@@ -58,7 +63,7 @@ export const AuthView: React.FC = () => {
             RINJANI SYSTEM
           </h1>
           <p className="text-xs font-rajdhani font-bold text-purple-300/70 tracking-widest uppercase">
-            SECURE ACCESS GATEWAY
+            CLOUD SECURE ACCESS
           </p>
         </div>
 
@@ -83,7 +88,7 @@ export const AuthView: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#0d0718] border border-purple-500/20 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-fuchsia-500 transition-all font-mono"
-                  placeholder="name@company.com"
+                  placeholder="admin@rinjani.com"
                 />
               </div>
             </div>
