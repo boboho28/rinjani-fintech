@@ -16,7 +16,7 @@ import {
 // Firebase Imports
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 import { 
   DEFAULT_MARQUEE_SETTINGS,
@@ -46,6 +46,7 @@ import { CurrencyRateModal } from './components/CurrencyRateModal';
 import { CryptoMarketModal } from './components/CryptoMarketModal';
 import { GoldMarketModal } from './components/GoldMarketModal';
 import { TickerSettingsModal } from './components/TickerSettingsModal';
+import { RefreshCw } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
@@ -91,10 +92,7 @@ export default function App() {
   // 2. Firestore Sync Listener (Real-time)
   useEffect(() => {
     if (!user) return;
-
-    // Path: users/{uid}/data/appData
     const docRef = doc(db, 'users', user.uid, 'settings', 'appData');
-    
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -108,7 +106,6 @@ export default function App() {
         setMarqueeSettings(data.marquee || DEFAULT_MARQUEE_SETTINGS);
       }
     });
-
     return () => unsubscribe();
   }, [user]);
 
@@ -123,388 +120,124 @@ export default function App() {
     }
   };
 
-  // State Handlers with Cloud Sync
-  const updateTransactions = (newList: Transaction[]) => {
-    setTransactions(newList);
-    syncToCloud({ transactions: newList });
-  };
+  // State Updates (Trigger Cloud Sync)
+  const updateTransactions = (newList: Transaction[]) => { setTransactions(newList); syncToCloud({ transactions: newList }); };
+  const updateInvestments = (newList: Investment[]) => { setInvestments(newList); syncToCloud({ investments: newList }); };
+  const updateDebts = (newList: DebtItem[]) => { setDebts(newList); syncToCloud({ debts: newList }); };
+  const updateSalaries = (newList: SalaryBonus[]) => { setSalaries(newList); syncToCloud({ salaries: newList }); };
+  const updateTradings = (newList: TradingJournalItem[]) => { setTradings(newList); syncToCloud({ tradings: newList }); };
+  const updateSavingsGoals = (newList: SavingsGoal[]) => { setSavingsGoals(newList); syncToCloud({ savingsGoals: newList }); };
+  const handleSaveMarqueeSettings = (newSettings: MarqueeSettings) => { setMarqueeSettings(newSettings); syncToCloud({ marquee: newSettings }); };
 
-  const updateInvestments = (newList: Investment[]) => {
-    setInvestments(newList);
-    syncToCloud({ investments: newList });
-  };
-
-  const updateDebts = (newList: DebtItem[]) => {
-    setDebts(newList);
-    syncToCloud({ debts: newList });
-  };
-
-  const updateSalaries = (newList: SalaryBonus[]) => {
-    setSalaries(newList);
-    syncToCloud({ salaries: newList });
-  };
-
-  const updateTradings = (newList: TradingJournalItem[]) => {
-    setTradings(newList);
-    syncToCloud({ tradings: newList });
-  };
-
-  const updateSavingsGoals = (newList: SavingsGoal[]) => {
-    setSavingsGoals(newList);
-    syncToCloud({ savingsGoals: newList });
-  };
-
-  const handleSaveMarqueeSettings = (newSettings: MarqueeSettings) => {
-    setMarqueeSettings(newSettings);
-    syncToCloud({ marquee: newSettings });
-  };
-
-  // --- START LOGIC HANDLERS (Same as before but using Cloud Sync) ---
-
-  const handleAddGoal = (goalData: Omit<SavingsGoal, 'id' | 'deposits'> & { initialDeposit?: number }) => {
-    const newId = `goal-${Date.now()}`;
-    const initialAmt = goalData.initialDeposit || 0;
-    const initialDepositObj = initialAmt > 0 ? [{
-      id: `dep-${Date.now()}`,
-      date: new Date().toISOString().slice(0, 10),
-      amount: initialAmt,
-      account: goalData.sourceAccount || 'Bank BCA',
-      note: 'Setoran awal target'
-    }] : [];
-
-    const newGoal: SavingsGoal = {
-      id: newId,
-      title: goalData.title,
-      category: goalData.category,
-      targetAmount: goalData.targetAmount,
-      currentAmount: initialAmt,
-      targetDate: goalData.targetDate,
-      startDate: goalData.startDate,
-      sourceAccount: goalData.sourceAccount,
-      notes: goalData.notes,
-      isCompleted: initialAmt >= goalData.targetAmount,
-      deposits: initialDepositObj
-    };
-
-    const newGoals = [newGoal, ...savingsGoals];
-    updateSavingsGoals(newGoals);
-
-    if (initialAmt > 0) {
-      const newTx: Transaction = {
-        id: `tx-dep-${Date.now()}`,
-        date: new Date().toISOString().slice(0, 10),
-        description: `Setoran Awal Tabungan: ${goalData.title}`,
-        amount: initialAmt,
-        type: 'expense',
-        category: 'Investasi',
-        account: goalData.sourceAccount || 'Bank BCA',
-        note: `Alokasi tabungan target ${goalData.title}`
-      };
-      updateTransactions([newTx, ...transactions]);
-    }
-  };
-
-  const handleEditGoal = (updatedGoal: SavingsGoal) => {
-    const newList = savingsGoals.map((g) => (g.id === updatedGoal.id ? updatedGoal : g));
-    updateSavingsGoals(newList);
-  };
-
-  const handleDeleteGoal = (id: string) => {
-    const newList = savingsGoals.filter((g) => g.id !== id);
-    updateSavingsGoals(newList);
-  };
-
-  const handleAddDeposit = (goalId: string, deposit: Omit<SavingsDeposit, 'id'>, syncJournal: boolean) => {
-    const newDepId = `dep-${Date.now()}`;
-    const newDep: SavingsDeposit = { id: newDepId, ...deposit };
-
-    const newList = savingsGoals.map((g) => {
-      if (g.id === goalId) {
-        const newCurrent = g.currentAmount + deposit.amount;
-        const existingDeps = g.deposits || [];
-        return {
-          ...g,
-          currentAmount: newCurrent,
-          isCompleted: newCurrent >= g.targetAmount,
-          deposits: [newDep, ...existingDeps]
-        };
-      }
-      return g;
-    });
-
-    updateSavingsGoals(newList);
-
-    if (syncJournal) {
-      const targetGoal = savingsGoals.find(g => g.id === goalId);
-      const goalName = targetGoal ? targetGoal.title : 'Target Impian';
-      const newTx: Transaction = {
-        id: `tx-dep-${Date.now()}`,
-        date: deposit.date,
-        description: `Setoran Tabungan: ${goalName}`,
-        amount: deposit.amount,
-        type: 'expense',
-        category: 'Investasi',
-        account: deposit.account,
-        note: deposit.note || `Alokasi setoran tabungan target ${goalName}`
-      };
-      updateTransactions([newTx, ...transactions]);
-    }
-  };
-
-  const handleDeleteDeposit = (goalId: string, depositId: string) => {
-    const targetGoal = savingsGoals.find(g => g.id === goalId);
-    if (!targetGoal) return;
-    const depToRemove = targetGoal.deposits?.find(d => d.id === depositId);
-    const removedAmt = depToRemove ? depToRemove.amount : 0;
-
-    const newList = savingsGoals.map((g) => {
-      if (g.id === goalId) {
-        const newCurrent = Math.max(0, g.currentAmount - removedAmt);
-        return {
-          ...g,
-          currentAmount: newCurrent,
-          isCompleted: newCurrent >= g.targetAmount,
-          deposits: (g.deposits || []).filter(d => d.id !== depositId)
-        };
-      }
-      return g;
-    });
-
-    updateSavingsGoals(newList);
-  };
-
-  // Calculations
-  const totalBalance = transactions.reduce((acc, tx) => {
-    return tx.type === 'income' ? acc + tx.amount : acc - tx.amount;
-  }, 0);
-
-  const totalInvestmentVal = investments.reduce(
-    (acc, inv) => acc + inv.currentPrice * inv.shares,
-    0
-  );
-
-  const totalDebtsOwed = debts
-    .filter((d) => d.type === 'hutang')
-    .reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
-
-  const totalReceivablesOwed = debts
-    .filter((d) => d.type === 'piutang')
-    .reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
-
-  const netWorth = totalBalance + totalInvestmentVal + totalReceivablesOwed - totalDebtsOwed;
-
-  const currentMonthStr = new Date().toISOString().slice(0, 7);
-  const monthlyTransactions = transactions.filter((tx) => tx.date.startsWith(currentMonthStr));
-  const monthlyIncome = monthlyTransactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-  const monthlyExpense = monthlyTransactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  // Transaction CRUD
+  // Logic Handlers
   const handleSaveTransaction = (txData: Omit<Transaction, 'id'>, editId?: string) => {
     if (editId) {
-      const updated = transactions.map((t) => (t.id === editId ? { ...txData, id: editId } : t));
-      updateTransactions(updated);
+      updateTransactions(transactions.map((t) => (t.id === editId ? { ...txData, id: editId } : t)));
     } else {
-      const newTx: Transaction = { ...txData, id: `tx-${Date.now()}` };
-      updateTransactions([newTx, ...transactions]);
+      updateTransactions([{ ...txData, id: `tx-${Date.now()}` }, ...transactions]);
     }
     setEditingTx(null);
   };
 
-  const handleDeleteTransaction = (id: string) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
-      updateTransactions(transactions.filter((t) => t.id !== id));
-    }
-  };
+  const handleDeleteTransaction = (id: string) => { if (window.confirm('Hapus transaksi?')) updateTransactions(transactions.filter((t) => t.id !== id)); };
 
-  // Investment CRUD
   const handleSaveInvestment = (invData: Omit<Investment, 'id'>, editId?: string) => {
-    if (editId) {
-      const updated = investments.map((inv) => (inv.id === editId ? { ...invData, id: editId } : inv));
-      updateInvestments(updated);
-    } else {
-      const newInv: Investment = { ...invData, id: `inv-${Date.now()}` };
-      updateInvestments([...investments, newInv]);
-    }
+    if (editId) { updateInvestments(investments.map((inv) => (inv.id === editId ? { ...invData, id: editId } : inv))); } 
+    else { updateInvestments([...investments, { ...invData, id: `inv-${Date.now()}` }]); }
     setEditingInv(null);
   };
 
-  const handleDeleteInvestment = (id: string) => {
-    if (window.confirm('Hapus item investasi ini dari portofolio?')) {
-      updateInvestments(investments.filter((inv) => inv.id !== id));
-    }
-  };
+  const handleDeleteInvestment = (id: string) => { if (window.confirm('Hapus investasi?')) updateInvestments(investments.filter((inv) => inv.id !== id)); };
 
-  // Debt CRUD
   const handleSaveDebt = (debtData: Omit<DebtItem, 'id' | 'payments'>, editId?: string) => {
-    if (editId) {
-      const updated = debts.map((d) => d.id === editId ? { ...debtData, id: editId, payments: d.payments } : d);
-      updateDebts(updated);
-    } else {
-      const newDebt: DebtItem = { ...debtData, id: `debt-${Date.now()}`, payments: [] };
-      updateDebts([...debts, newDebt]);
-    }
+    if (editId) { updateDebts(debts.map((d) => d.id === editId ? { ...debtData, id: editId, payments: d.payments } : d)); } 
+    else { updateDebts([...debts, { ...debtData, id: `debt-${Date.now()}`, payments: [] }]); }
     setEditingDebt(null);
   };
 
-  const handleDeleteDebt = (id: string) => {
-    if (window.confirm('Hapus catatan hutang/piutang ini?')) {
-      updateDebts(debts.filter((d) => d.id !== id));
-    }
-  };
+  const handleDeleteDebt = (id: string) => { if (window.confirm('Hapus hutang?')) updateDebts(debts.filter((d) => d.id !== id)); };
 
   const handlePayDebt = (debtId: string, paymentAmount: number, note: string) => {
     const targetDebt = debts.find((d) => d.id === debtId);
     if (!targetDebt) return;
-
     const newPaidAmount = targetDebt.paidAmount + paymentAmount;
     let newStatus = targetDebt.status;
     if (newPaidAmount >= targetDebt.totalAmount) newStatus = 'lunas';
     else if (newPaidAmount > 0) newStatus = 'sebagian';
-
-    const newPaymentObj = {
-      id: `pay-${Date.now()}`,
-      date: new Date().toISOString().slice(0, 10),
-      amount: paymentAmount,
-      note,
-    };
-
-    const updatedDebts = debts.map((d) =>
-      d.id === debtId
-        ? { ...d, paidAmount: newPaidAmount, status: newStatus, payments: [...d.payments, newPaymentObj] }
-        : d
-    );
-
-    updateDebts(updatedDebts);
-
+    const newPaymentObj = { id: `pay-${Date.now()}`, date: new Date().toISOString().slice(0, 10), amount: paymentAmount, note };
+    updateDebts(debts.map((d) => d.id === debtId ? { ...d, paidAmount: newPaidAmount, status: newStatus, payments: [...d.payments, newPaymentObj] } : d));
     const journalType = targetDebt.type === 'hutang' ? 'expense' : 'income';
-    const journalDesc = targetDebt.type === 'hutang' ? `Bayar Cicilan: ${targetDebt.title}` : `Terima Pelunasan: ${targetDebt.title}`;
-
-    const newTx: Transaction = {
-      id: `tx-${Date.now()}`,
-      date: new Date().toISOString().slice(0, 10),
-      description: journalDesc,
-      amount: paymentAmount,
-      type: journalType,
-      category: 'Tagihan & Utilitas',
-      account: 'Bank BCA',
-      note: `Pelunasan/Cicilan ke ${targetDebt.personName}. ${note}`,
-    };
-
-    updateTransactions([newTx, ...transactions]);
+    updateTransactions([{ id: `tx-${Date.now()}`, date: new Date().toISOString().slice(0, 10), description: `Bayar: ${targetDebt.title}`, amount: paymentAmount, type: journalType, category: 'Tagihan & Utilitas', account: 'Bank BCA', note }, ...transactions]);
   };
 
-  // Salary CRUD
   const handleSaveSalary = (salData: Omit<SalaryBonus, 'id'>, editId?: string) => {
-    if (editId) {
-      const updated = salaries.map((s) => (s.id === editId ? { ...salData, id: editId } : s));
-      updateSalaries(updated);
-    } else {
-      const newSal: SalaryBonus = { ...salData, id: `sal-${Date.now()}` };
-      updateSalaries([...salaries, newSal]);
-    }
+    if (editId) { updateSalaries(salaries.map((s) => (s.id === editId ? { ...salData, id: editId } : s))); } 
+    else { updateSalaries([...salaries, { ...salData, id: `sal-${Date.now()}` }]); }
     setEditingSalary(null);
   };
 
-  const handleDeleteSalary = (id: string) => {
-    if (window.confirm('Hapus slip gaji/bonus ini?')) {
-      updateSalaries(salaries.filter((s) => s.id !== id));
-    }
-  };
+  const handleDeleteSalary = (id: string) => { if (window.confirm('Hapus slip gaji?')) updateSalaries(salaries.filter((s) => s.id !== id)); };
 
   const handleClaimSalaryToJournal = (salaryItem: SalaryBonus) => {
-    const newTx: Transaction = {
-      id: `tx-sal-${Date.now()}`,
-      date: salaryItem.date,
-      description: `Klaim Gaji: ${salaryItem.title}`,
-      amount: salaryItem.nettAmount,
-      type: 'income',
-      category: 'Gaji & Bonus',
-      account: 'Bank BCA',
-      note: `Pencairan dari ${salaryItem.sourceCompany}`,
-    };
-    updateTransactions([newTx, ...transactions]);
-    const updatedSalaries = salaries.map((s) =>
-      s.id === salaryItem.id ? { ...s, status: 'diterima' as const, isClaimedToJournal: true } : s
-    );
-    updateSalaries(updatedSalaries);
+    updateTransactions([{ id: `tx-sal-${Date.now()}`, date: salaryItem.date, description: `Klaim: ${salaryItem.title}`, amount: salaryItem.nettAmount, type: 'income', category: 'Gaji & Bonus', account: 'Bank BCA', note: salaryItem.sourceCompany }, ...transactions]);
+    updateSalaries(salaries.map((s) => s.id === salaryItem.id ? { ...s, status: 'diterima' as const, isClaimedToJournal: true } : s));
   };
 
-  // Trading CRUD
   const handleSaveTrading = (tradingData: Omit<TradingJournalItem, 'id'>, editId?: string) => {
-    if (editId) {
-      const updated = tradings.map((t) => (t.id === editId ? { ...tradingData, id: editId } : t));
-      updateTradings(updated);
-    } else {
-      const newTrading: TradingJournalItem = { ...tradingData, id: `trd-${Date.now()}` };
-      updateTradings([newTrading, ...tradings]);
-    }
+    if (editId) { updateTradings(tradings.map((t) => (t.id === editId ? { ...tradingData, id: editId } : t))); } 
+    else { updateTradings([{ ...tradingData, id: `trd-${Date.now()}` }, ...tradings]); }
     setEditingTrading(null);
   };
 
-  const handleDeleteTrading = (id: string) => {
-    if (window.confirm('Hapus catatan hasil trading ini?')) {
-      updateTradings(tradings.filter((t) => t.id !== id));
-    }
-  };
+  const handleDeleteTrading = (id: string) => { if (window.confirm('Hapus trading?')) updateTradings(tradings.filter((t) => t.id !== id)); };
 
   const handleClaimTradingToJournal = (tradingItem: TradingJournalItem) => {
     if (tradingItem.profitAmount <= 0) return;
-    const newTx: Transaction = {
-      id: `tx-trd-${Date.now()}`,
-      date: tradingItem.date,
-      description: `Profit Trading: ${tradingItem.title}`,
-      amount: tradingItem.profitAmount,
-      type: 'income',
-      category: 'Investasi',
-      account: tradingItem.account || 'Bank BCA',
-      note: `Hasil Trading ${tradingItem.pair}`,
-    };
-    updateTransactions([newTx, ...transactions]);
-    const updatedTradings = tradings.map((t) =>
-      t.id === tradingItem.id ? { ...t, isClaimedToJournal: true } : t
-    );
-    updateTradings(updatedTradings);
+    updateTransactions([{ id: `tx-trd-${Date.now()}`, date: tradingItem.date, description: `Profit: ${tradingItem.title}`, amount: tradingItem.profitAmount, type: 'income', category: 'Investasi', account: tradingItem.account || 'Bank BCA', note: tradingItem.pair }, ...transactions]);
+    updateTradings(tradings.map((t) => t.id === tradingItem.id ? { ...t, isClaimedToJournal: true } : t));
   };
 
   const handleBatchClaimTradingToJournal = (items: TradingJournalItem[], bank: AccountType, summaryTitle?: string) => {
     const validItems = items.filter((t) => t.profitAmount > 0 && !t.isClaimedToJournal);
     if (validItems.length === 0) return;
-    const totalAmountIDR = validItems.reduce((sum, t) => sum + t.profitAmount, 0);
-    const newTx: Transaction = {
-      id: `tx-trd-batch-${Date.now()}`,
-      date: new Date().toISOString().slice(0, 10),
-      description: summaryTitle || `Pencairan Batch Profit Trading`,
-      amount: totalAmountIDR,
-      type: 'income',
-      category: 'Investasi',
-      account: bank || 'Bank BCA',
-      note: `Pencairan kolektif ${validItems.length} transaksi`,
-    };
-    updateTransactions([newTx, ...transactions]);
+    updateTransactions([{ id: `tx-trd-batch-${Date.now()}`, date: new Date().toISOString().slice(0, 10), description: summaryTitle || `Pencairan Batch Profit`, amount: validItems.reduce((sum, t) => sum + t.profitAmount, 0), type: 'income', category: 'Investasi', account: bank || 'Bank BCA', note: `Batch ${validItems.length} trades` }, ...transactions]);
     const validIds = new Set(validItems.map((i) => i.id));
-    const updatedTradings = tradings.map((t) =>
-      validIds.has(t.id) ? { ...t, isClaimedToJournal: true, account: bank } : t
-    );
-    updateTradings(updatedTradings);
+    updateTradings(tradings.map((t) => validIds.has(t.id) ? { ...t, isClaimedToJournal: true, account: bank } : t));
   };
 
-  const handleBatchAddParsedTransactions = (parsedTxs: Partial<Transaction>[]) => {
-    const createdList: Transaction[] = parsedTxs.map((ptx, idx) => ({
-      id: `tx-ai-${Date.now()}-${idx}`,
-      date: ptx.date || new Date().toISOString().slice(0, 10),
-      description: ptx.description || 'Transaksi AI',
-      amount: ptx.amount || 0,
-      type: (ptx.type as any) || 'expense',
-      category: ptx.category || 'Lain-lain',
-      account: (ptx.account as any) || 'Bank BCA',
-      note: ptx.note || 'Parsed by Gemini AI',
-    }));
-    updateTransactions([...createdList, ...transactions]);
+  const handleAddGoal = (goalData: Omit<SavingsGoal, 'id' | 'deposits'> & { initialDeposit?: number }) => {
+    const newId = `goal-${Date.now()}`;
+    const initialAmt = goalData.initialDeposit || 0;
+    const initialDepositObj = initialAmt > 0 ? [{ id: `dep-${Date.now()}`, date: new Date().toISOString().slice(0, 10), amount: initialAmt, account: goalData.sourceAccount || 'Bank BCA', note: 'Awal' }] : [];
+    const newGoal: SavingsGoal = { ...goalData, id: newId, currentAmount: initialAmt, deposits: initialDepositObj, isCompleted: initialAmt >= goalData.targetAmount };
+    updateSavingsGoals([newGoal, ...savingsGoals]);
+    if (initialAmt > 0) updateTransactions([{ id: `tx-dep-${Date.now()}`, date: new Date().toISOString().slice(0, 10), description: `Nabung: ${goalData.title}`, amount: initialAmt, type: 'expense', category: 'Investasi', account: goalData.sourceAccount || 'Bank BCA' }, ...transactions]);
   };
+
+  const handleAddDeposit = (goalId: string, deposit: Omit<SavingsDeposit, 'id'>, syncJournal: boolean) => {
+    const newDep = { ...deposit, id: `dep-${Date.now()}` };
+    updateSavingsGoals(savingsGoals.map((g) => {
+      if (g.id === goalId) {
+        const newCurrent = g.currentAmount + deposit.amount;
+        return { ...g, currentAmount: newCurrent, isCompleted: newCurrent >= g.targetAmount, deposits: [newDep, ...(g.deposits || [])] };
+      }
+      return g;
+    }));
+    if (syncJournal) {
+      const g = savingsGoals.find(x => x.id === goalId);
+      updateTransactions([{ id: `tx-dep-${Date.now()}`, date: deposit.date, description: `Nabung: ${g?.title}`, amount: deposit.amount, type: 'expense', category: 'Investasi', account: deposit.account }, ...transactions]);
+    }
+  };
+
+  // Shared Calculations
+  const totalBalance = transactions.reduce((acc, tx) => tx.type === 'income' ? acc + tx.amount : acc - tx.amount, 0);
+  const totalInv = investments.reduce((acc, inv) => acc + (inv.currentPrice * inv.shares), 0);
+  const totalHutang = debts.filter(d => d.type === 'hutang').reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
+  const totalPiutang = debts.filter(d => d.type === 'piutang').reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
+  const netWorth = totalBalance + totalInv + totalPiutang - totalHutang;
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const mIn = transactions.filter(t => t.date.startsWith(currentMonthStr) && t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const mEx = transactions.filter(t => t.date.startsWith(currentMonthStr) && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
   if (isAuthLoading) {
     return (
@@ -517,133 +250,42 @@ export default function App() {
     );
   }
 
-  if (!user) {
-    return <AuthView />;
-  }
+  if (!user) return <AuthView />;
 
   return (
     <div className="min-h-screen bg-[#0a0512] text-purple-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white">
       <HeaderNavbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        totalBalance={totalBalance}
-        netWorth={netWorth}
+        activeTab={activeTab} setActiveTab={setActiveTab} totalBalance={totalBalance} netWorth={netWorth}
         onOpenAddModal={() => { setEditingTx(null); setIsAddTxModalOpen(true); }}
         onOpenAIModal={() => setIsAIModalOpen(true)}
         onExportData={() => exportBackupJSON({ transactions, investments, debts, salaries, budgets, tradings, savingsGoals })}
-        onResetDemo={() => alert("Gunakan fitur Cloud Sync untuk reset data via Firestore Console.")}
+        onResetDemo={() => alert("Gunakan Firestore Console untuk reset data cloud.")}
       />
-
-      <RunningTickerBanner
-        settings={marqueeSettings}
-        onOpenSettingsModal={() => setIsTickerModalOpen(true)}
-      />
-
+      <RunningTickerBanner settings={marqueeSettings} onOpenSettingsModal={() => setIsTickerModalOpen(true)} />
       <div className="flex-1 w-full flex flex-col lg:flex-row min-h-0">
         <SidebarNavigation
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          onOpenAIModal={() => setIsAIModalOpen(true)}
-          onOpenRateModal={() => setIsRateModalOpen(true)}
-          onOpenCryptoModal={() => setIsCryptoModalOpen(true)}
-          onOpenGoldModal={() => setIsGoldModalOpen(true)}
-          debtCount={debts.filter((d) => d.status !== 'lunas').length}
-          pendingBonusCount={salaries.filter((s) => !s.isClaimedToJournal).length}
-          unclaimedTradingCount={tradings.filter((t) => t.type === 'profit' && !t.isClaimedToJournal).length}
-          activeGoalsCount={savingsGoals.filter((g) => !g.isCompleted).length}
+          activeTab={activeTab} setActiveTab={setActiveTab} onOpenAIModal={() => setIsAIModalOpen(true)}
+          onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
+          debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length}
+          unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
         />
-
         <main className="flex-1 p-3 sm:p-4 lg:p-5 overflow-y-auto w-full min-w-0">
-          {activeTab === 'dashboard' && (
-            <DashboardView
-              transactions={transactions}
-              investments={investments}
-              debts={debts}
-              totalBalance={totalBalance}
-              netWorth={netWorth}
-              onOpenAddModal={() => { setEditingTx(null); setIsAddTxModalOpen(true); }}
-              onOpenAIModal={() => setIsAIModalOpen(true)}
-              onNavigateToTab={setActiveTab}
-            />
-          )}
-
-          {activeTab === 'jurnal' && (
-            <JournalView
-              transactions={transactions}
-              onAddTransaction={() => { setEditingTx(null); setIsAddTxModalOpen(true); }}
-              onEditTransaction={(tx) => { setEditingTx(tx); setIsAddTxModalOpen(true); }}
-              onDeleteTransaction={handleDeleteTransaction}
-              onOpenAIModal={() => setIsAIModalOpen(true)}
-            />
-          )}
-
-          {activeTab === 'laporan' && (
-            <MonthlyReportView transactions={transactions} budgets={budgets} onOpenAIModal={() => setIsAIModalOpen(true)} />
-          )}
-
-          {activeTab === 'investasi' && (
-            <InvestmentsView
-              investments={investments}
-              onAddInvestment={() => { setEditingInv(null); setIsAddInvModalOpen(true); }}
-              onEditInvestment={(inv) => { setEditingInv(inv); setIsAddInvModalOpen(true); }}
-              onDeleteInvestment={handleDeleteInvestment}
-              onOpenAIModal={() => setIsAIModalOpen(true)}
-            />
-          )}
-
-          {activeTab === 'hutang_piutang' && (
-            <DebtView
-              debts={debts}
-              onAddDebt={() => { setEditingDebt(null); setIsAddDebtModalOpen(true); }}
-              onEditDebt={(d) => { setEditingDebt(d); setIsAddDebtModalOpen(true); }}
-              onDeleteDebt={handleDeleteDebt}
-              onPayDebt={handlePayDebt}
-              onOpenAIModal={() => setIsAIModalOpen(true)}
-            />
-          )}
-
-          {activeTab === 'gaji_bonus' && (
-            <SalaryBonusView
-              salaries={salaries}
-              onAddSalary={() => { setEditingSalary(null); setIsAddSalaryModalOpen(true); }}
-              onEditSalary={(s) => { setEditingSalary(s); setIsAddSalaryModalOpen(true); }}
-              onDeleteSalary={handleDeleteSalary}
-              onClaimToJournal={handleClaimSalaryToJournal}
-              onOpenAIModal={() => setIsAIModalOpen(true)}
-            />
-          )}
-
-          {activeTab === 'trading' && (
-            <TradingJournalView
-              tradings={tradings}
-              onOpenAddModal={() => { setEditingTrading(null); setIsAddTradingModalOpen(true); }}
-              onEditTrading={(trd) => { setEditingTrading(trd); setIsAddTradingModalOpen(true); }}
-              onDeleteTrading={handleDeleteTrading}
-              onClaimToJournal={handleClaimTradingToJournal}
-              onBatchClaimToJournal={handleBatchClaimTradingToJournal}
-            />
-          )}
-
-          {activeTab === 'tabungan' && (
-            <SavingsGoalsView
-              savingsGoals={savingsGoals}
-              onAddGoal={handleAddGoal}
-              onEditGoal={handleEditGoal}
-              onDeleteGoal={handleDeleteGoal}
-              onAddDeposit={handleAddDeposit}
-              onDeleteDeposit={handleDeleteDeposit}
-            />
-          )}
+          {activeTab === 'dashboard' && <DashboardView transactions={transactions} investments={investments} debts={debts} totalBalance={totalBalance} netWorth={netWorth} onOpenAddModal={() => setIsAddTxModalOpen(true)} onOpenAIModal={() => setIsAIModalOpen(true)} onNavigateToTab={setActiveTab} />}
+          {activeTab === 'jurnal' && <JournalView transactions={transactions} onAddTransaction={() => setIsAddTxModalOpen(true)} onEditTransaction={(tx) => { setEditingTx(tx); setIsAddTxModalOpen(true); }} onDeleteTransaction={handleDeleteTransaction} onOpenAIModal={() => setIsAIModalOpen(true)} />}
+          {activeTab === 'laporan' && <MonthlyReportView transactions={transactions} budgets={budgets} onOpenAIModal={() => setIsAIModalOpen(true)} />}
+          {activeTab === 'investasi' && <InvestmentsView investments={investments} onAddInvestment={() => setIsAddInvModalOpen(true)} onEditInvestment={(inv) => { setEditingInv(inv); setIsAddInvModalOpen(true); }} onDeleteInvestment={handleDeleteInvestment} onOpenAIModal={() => setIsAIModalOpen(true)} />}
+          {activeTab === 'hutang_piutang' && <DebtView debts={debts} onAddDebt={() => setIsAddDebtModalOpen(true)} onEditDebt={(d) => { setEditingDebt(d); setIsAddDebtModalOpen(true); }} onDeleteDebt={handleDeleteDebt} onPayDebt={handlePayDebt} onOpenAIModal={() => setIsAIModalOpen(true)} />}
+          {activeTab === 'gaji_bonus' && <SalaryBonusView salaries={salaries} onAddSalary={() => setIsAddSalaryModalOpen(true)} onEditSalary={(s) => { setEditingSalary(s); setIsAddSalaryModalOpen(true); }} onDeleteSalary={handleDeleteSalary} onClaimToJournal={handleClaimSalaryToJournal} onOpenAIModal={() => setIsAIModalOpen(true)} />}
+          {activeTab === 'trading' && <TradingJournalView tradings={tradings} onOpenAddModal={() => setIsAddTradingModalOpen(true)} onEditTrading={(trd) => { setEditingTrading(trd); setIsAddTradingModalOpen(true); }} onDeleteTrading={handleDeleteTrading} onClaimToJournal={handleClaimTradingToJournal} onBatchClaimToJournal={handleBatchClaimTradingToJournal} />}
+          {activeTab === 'tabungan' && <SavingsGoalsView savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onEditGoal={updateSavingsGoals} onDeleteGoal={(id) => updateSavingsGoals(savingsGoals.filter(g => g.id !== id))} onAddDeposit={handleAddDeposit} onDeleteDeposit={(gid, did) => {}} />}
         </main>
       </div>
-
-      {/* Modals Component (Same as before) */}
       <AddTransactionModal isOpen={isAddTxModalOpen} onClose={() => { setIsAddTxModalOpen(false); setEditingTx(null); }} onSave={handleSaveTransaction} editingTransaction={editingTx} />
       <AddInvestmentModal isOpen={isAddInvModalOpen} onClose={() => { setIsAddInvModalOpen(false); setEditingInv(null); }} onSave={handleSaveInvestment} editingInvestment={editingInv} />
       <AddDebtModal isOpen={isAddDebtModalOpen} onClose={() => { setIsAddDebtModalOpen(false); setEditingDebt(null); }} onSave={handleSaveDebt} editingDebt={editingDebt} />
       <AddSalaryModal isOpen={isAddSalaryModalOpen} onClose={() => { setIsAddSalaryModalOpen(false); setEditingSalary(null); }} onSave={handleSaveSalary} editingSalary={editingSalary} />
       <AddTradingModal isOpen={isAddTradingModalOpen} onClose={() => { setIsAddTradingModalOpen(false); setEditingTrading(null); }} onSave={handleSaveTrading} editingTrading={editingTrading} />
-      <AIAssistantModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} financialContext={{ totalBalance, monthlyIncome, monthlyExpense, totalInvestment: totalInvestmentVal, totalDebt: totalDebtsOwed, totalReceivable: totalReceivableOwed }} onBatchAddTransactions={handleBatchAddParsedTransactions} />
+      <AIAssistantModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} financialContext={{ totalBalance, monthlyIncome: mIn, monthlyExpense: mEx, totalInvestment: totalInv, totalDebt: totalHutang, totalReceivable: totalPiutang }} onBatchAddTransactions={(txs) => {}} />
       <CurrencyRateModal isOpen={isRateModalOpen} onClose={() => setIsRateModalOpen(false)} />
       <CryptoMarketModal isOpen={isCryptoModalOpen} onClose={() => setIsCryptoModalOpen(false)} />
       <GoldMarketModal isOpen={isGoldModalOpen} onClose={() => setIsGoldModalOpen(false)} />
