@@ -196,11 +196,9 @@ export default function App() {
     updateTradings(tradings.map((t) => t.id === tradingItem.id ? { ...t, isClaimedToJournal: true } : t));
   };
 
-  // Fungsi Handler baru untuk menangani klaim batch (memperbaiki ReferenceError)
   const handleBatchClaimTradingToJournal = (items: TradingJournalItem[], bank: AccountType, summaryTitle?: string) => {
     const totalProfit = items.reduce((sum, item) => sum + item.profitAmount, 0);
     if (totalProfit <= 0) return;
-
     const newTxId = `tx-batch-trd-${Date.now()}`;
     const newTx: Transaction = {
       id: newTxId,
@@ -212,12 +210,10 @@ export default function App() {
       account: bank,
       note: `Pencairan profit dari ${items.length} posisi trading.`
     };
-
     const selectedIds = new Set(items.map(i => i.id));
     const updatedTradings = tradings.map(t => 
       selectedIds.has(t.id) ? { ...t, isClaimedToJournal: true, account: bank } : t
     );
-
     updateTransactions([newTx, ...transactions]);
     updateTradings(updatedTradings);
   };
@@ -270,9 +266,9 @@ export default function App() {
   if (!user) return <AuthView />;
 
   return (
-    <div className="min-h-screen bg-[#0a0512] text-purple-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white overflow-x-hidden">
+    <div className="h-screen bg-[#0a0512] text-purple-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white overflow-hidden">
       
-      {/* 1. Navbar */}
+      {/* 1. Navbar - Fixed at Top */}
       <HeaderNavbar
         activeTab={activeTab} setActiveTab={setActiveTab} totalBalance={totalBalance} netWorth={netWorth}
         onOpenAddModal={() => { setEditingTx(null); setIsAddTxModalOpen(true); }}
@@ -281,23 +277,25 @@ export default function App() {
         onResetDemo={() => alert("Gunakan Firestore Console untuk reset data cloud.")}
       />
       
-      {/* 2. Ticker */}
+      {/* 2. Ticker - Fixed below Navbar */}
       <RunningTickerBanner settings={marqueeSettings} onOpenSettingsModal={() => setIsTickerModalOpen(true)} />
       
-      {/* 3. Main Flex Container */}
-      <div className="flex-1 w-full flex flex-col lg:flex-row relative">
+      {/* 3. Main Container Area - Flex Row and Overflow Hidden to allow internal scroll */}
+      <div className="flex-1 w-full flex flex-row overflow-hidden relative">
         
-        {/* Sidebar Navigation - Sticky only on Desktop */}
-        <SidebarNavigation
-          activeTab={activeTab} setActiveTab={setActiveTab} onOpenAIModal={() => setIsAIModalOpen(true)}
-          onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
-          onLogout={handleLogout}
-          debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length}
-          unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
-        />
+        {/* Sidebar Navigation - Fixed/Sticky on the Left */}
+        <div className="h-full overflow-y-auto border-r border-purple-500/20">
+          <SidebarNavigation
+            activeTab={activeTab} setActiveTab={setActiveTab} onOpenAIModal={() => setIsAIModalOpen(true)}
+            onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
+            onLogout={handleLogout}
+            debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length}
+            unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
+          />
+        </div>
 
-        {/* --- MAIN CONTENT AREA --- */}
-        <main className="flex-1 w-full min-w-0 p-3 sm:p-4 lg:p-5">
+        {/* --- MAIN SCROLLABLE CONTENT AREA --- */}
+        <main className="flex-1 h-full overflow-y-auto p-3 sm:p-4 lg:p-5 custom-scrollbar">
            {activeTab === 'dashboard' && <DashboardView transactions={transactions} investments={investments} debts={debts} totalBalance={totalBalance} netWorth={netWorth} onOpenAddModal={() => setIsAddTxModalOpen(true)} onOpenAIModal={() => setIsAIModalOpen(true)} onNavigateToTab={setActiveTab} />}
            {activeTab === 'jurnal' && <JournalView transactions={transactions} onAddTransaction={() => setIsAddTxModalOpen(true)} onEditTransaction={(tx) => { setEditingTx(tx); setIsAddTxModalOpen(true); }} onDeleteTransaction={handleDeleteTransaction} onOpenAIModal={() => setIsAIModalOpen(true)} />}
            {activeTab === 'laporan' && <MonthlyReportView transactions={transactions} budgets={budgets} onOpenAIModal={() => setIsAIModalOpen(true)} />}
