@@ -196,24 +196,23 @@ export default function App() {
     updateTradings(tradings.map((t) => t.id === tradingItem.id ? { ...t, isClaimedToJournal: true } : t));
   };
 
-  // FUNGSI BARU UNTUK FIX ERROR BATCH CLAIM
+  // Fungsi Handler baru untuk menangani klaim batch (memperbaiki ReferenceError)
   const handleBatchClaimTradingToJournal = (items: TradingJournalItem[], bank: AccountType, summaryTitle?: string) => {
     const totalProfit = items.reduce((sum, item) => sum + item.profitAmount, 0);
     if (totalProfit <= 0) return;
 
-    // 1. Buat satu transaksi gabungan di jurnal
+    const newTxId = `tx-batch-trd-${Date.now()}`;
     const newTx: Transaction = {
-      id: `tx-batch-trd-${Date.now()}`,
+      id: newTxId,
       date: new Date().toISOString().slice(0, 10),
-      description: summaryTitle || `Withdrawal Profit: ${items.length} Trades`,
+      description: summaryTitle || `Withdrawal Kolektif: ${items.length} Trades`,
       amount: totalProfit,
       type: 'income',
       category: 'Investasi',
       account: bank,
-      note: `Kolektif dari ${items.length} posisi trading`
+      note: `Pencairan profit dari ${items.length} posisi trading.`
     };
 
-    // 2. Update status isClaimedToJournal pada setiap item trading yang dipilih
     const selectedIds = new Set(items.map(i => i.id));
     const updatedTradings = tradings.map(t => 
       selectedIds.has(t.id) ? { ...t, isClaimedToJournal: true, account: bank } : t
