@@ -56,7 +56,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   ];
 
   return (
-    <aside className="w-full lg:w-80 bg-[#0c0717] border-b lg:border-b-0 lg:border-r border-purple-500/25 p-4 lg:p-5 shrink-0 flex flex-col justify-between shadow-[4px_0_20px_rgba(168,85,247,0.08)] lg:sticky lg:top-[112px] lg:h-[calc(100vh-112px)] lg:overflow-y-auto z-10">
+    <aside className="w-full h-full bg-[#0c0717] p-4 lg:p-5 flex flex-col justify-between shadow-[4px_0_20px_rgba(168,85,247,0.08)]">
       <div className="space-y-4">
         <div className="bg-[#140b24] border border-purple-500/35 rounded-2xl p-3 space-y-2 shadow-[0_0_12px_rgba(168,85,247,0.15)]">
           <div className="flex items-center gap-3">
