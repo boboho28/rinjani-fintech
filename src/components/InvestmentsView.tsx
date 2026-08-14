@@ -9,7 +9,8 @@ import {
   RefreshCw,
   Wallet,
   X,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import { Investment, AssetType } from '../types';
 import { formatRupiah, formatDateIndo } from '../utils/formatters';
@@ -34,7 +35,6 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
   const [isFetching, setIsFetching] = useState(false);
   const [historySymbol, setHistorySymbol] = useState<string | null>(null);
 
-  // FETCH HARGA DARI INDODAX
   const fetchPrices = async () => {
     setIsFetching(true);
     try {
@@ -60,7 +60,6 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // GROUPING LOGIC
   const grouped = investments.reduce((acc, curr) => {
     const key = curr.symbol.toUpperCase();
     if (!acc[key]) {
@@ -80,7 +79,6 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
     (g) => selectedAssetType === 'all' || g.assetType === selectedAssetType
   );
 
-  // Global Stats
   const globalTotalCost = investments.reduce((sum, inv) => sum + (inv.buyPrice * inv.shares), 0);
   const globalTotalValue = Object.values(grouped).reduce((sum, g) => {
     const live = g.assetType === 'Crypto' ? (cryptoPrices[g.symbol] || g.items[0].buyPrice) : g.items[0].buyPrice;
@@ -91,7 +89,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
   return (
     <div className="space-y-6 animate-fadeIn pb-20">
       
-      {/* Header */}
+      {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#130b24]/90 border border-purple-500/30 rounded-2xl p-6 shadow-neo-purple backdrop-blur-md">
         <div>
           <div className="flex items-center gap-2 text-purple-300 text-xs font-orbitron font-bold uppercase tracking-wider mb-1">
@@ -126,7 +124,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
       {/* Tabs Filter */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {['all', 'Saham', 'Reksadana', 'Emas', 'Crypto', 'Obligasi / SBN'].map((type) => (
-          <button key={type} onClick={() => setSelectedAssetType(type)} className={`px-4 py-2 rounded-xl text-[10px] font-orbitron font-bold uppercase tracking-wider whitespace-nowrap transition-all border cursor-pointer ${selectedAssetType === type ? 'bg-purple-600 text-white border-purple-400 shadow-neo-purple' : 'bg-[#130b20] text-purple-400 border-purple-500/30'}`}>{type === 'all' ? 'Semua Asset' : type}</button>
+          <button key={type} onClick={() => setSelectedAssetType(type)} className={`px-4 py-2 rounded-xl text-[10px] font-orbitron font-bold uppercase tracking-wider whitespace-nowrap transition-all border cursor-pointer ${selectedAssetType === type ? 'bg-purple-600 text-white border-purple-400 shadow-neo-purple' : 'bg-[#130b20] text-purple-400 border border-purple-500/30'}`}>{type === 'all' ? 'Semua Asset' : type}</button>
         ))}
       </div>
 
@@ -134,7 +132,8 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {groups.map((group) => {
           const totalModalPerAset = group.items.reduce((sum, i) => sum + (i.buyPrice * i.shares), 0);
-          const livePrice = group.assetType === 'Crypto' ? (cryptoPrices[group.symbol] || group.items[group.items.length-1].buyPrice) : group.items[group.items.length-1].buyPrice;
+          const lastItem = group.items[group.items.length - 1];
+          const livePrice = group.assetType === 'Crypto' ? (cryptoPrices[group.symbol] || lastItem.buyPrice) : lastItem.buyPrice;
 
           return (
             <div key={group.symbol} className="bg-[#130b20]/95 border border-purple-500/30 rounded-2xl p-6 space-y-5 shadow-neo-purple relative overflow-hidden group">
@@ -145,20 +144,17 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="font-orbitron font-black text-2xl text-white tracking-widest">{group.symbol}</span>
                     <span className="px-2 py-0.5 text-[9px] font-orbitron font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase">{group.assetType}</span>
-                    <span className="px-2 py-0.5 text-[9px] font-orbitron font-bold rounded bg-[#1a0f30] text-purple-400 border border-purple-500/20 uppercase truncate max-w-[100px]">{group.platform}</span>
                   </div>
                   <h4 className="text-[11px] font-rajdhani font-bold text-purple-300/80 uppercase mt-1">{group.name}</h4>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                   {/* TOMBOL POPUP HISTORY */}
                    <button onClick={() => setHistorySymbol(group.symbol)} className="p-2 rounded-xl bg-[#1a0f30] text-purple-300 border border-purple-500/30 hover:border-purple-400 transition-all cursor-pointer shadow-neo-purple active:scale-90"><History className="w-4 h-4" /></button>
-                   <button onClick={() => onEditInvestment(group.items[group.items.length-1])} className="p-2 rounded-xl bg-[#1a0f30] text-purple-300 border border-purple-500/30 cursor-pointer"><Edit3 className="w-4 h-4" /></button>
+                   <button onClick={() => onEditInvestment(lastItem)} className="p-2 rounded-xl bg-[#1a0f30] text-purple-300 border border-purple-500/30 cursor-pointer"><Edit3 className="w-4 h-4" /></button>
                    <button onClick={() => { if(window.confirm(`Hapus seluruh data ${group.symbol}?`)) group.items.forEach(i => onDeleteInvestment(i.id)) }} className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/30 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
 
-              {/* BOX KONTEN SIMPEL */}
               <div className="bg-[#0a0512]/80 border border-purple-500/20 rounded-xl p-5 shadow-inner grid grid-cols-1 gap-4">
                  <div>
                     <p className="text-[9px] font-orbitron font-bold text-purple-400 uppercase tracking-widest mb-1">Total Modal Investasi</p>
@@ -170,8 +166,8 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
                       <p className="text-base font-mono font-bold text-cyan-300">{formatRupiah(livePrice)}</p>
                     </div>
                     <div className="text-right">
-                       <p className="text-[9px] font-orbitron font-bold text-purple-400 uppercase tracking-widest">Aksi</p>
-                       <span className="text-[10px] text-purple-300 font-rajdhani italic">Cek History Detail ➔</span>
+                       <p className="text-[9px] font-orbitron font-bold text-purple-400 uppercase tracking-widest">Platform</p>
+                       <span className="text-[10px] text-purple-300 font-mono uppercase">{group.platform}</span>
                     </div>
                  </div>
               </div>
@@ -180,10 +176,10 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
         })}
       </div>
 
-      {/* POPUP HISTORY MODAL (KODE DI UPDATE DISINI) */}
+      {/* POPUP HISTORY MODAL (DENGAN TANGGAL & ANALISIS) */}
       {historySymbol && grouped[historySymbol] && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-           <div className="bg-[#130b20] border border-purple-500/40 rounded-2xl w-full max-w-2xl p-6 space-y-5 shadow-neo-purple animate-scaleUp">
+           <div className="bg-[#130b20] border border-purple-500/40 rounded-2xl w-full max-w-4xl p-6 space-y-5 shadow-neo-purple animate-scaleUp">
               <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
                  <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-purple-500/10"><History className="w-5 h-5 text-fuchsia-400" /></div>
@@ -196,13 +192,14 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
               </div>
 
               <div className="overflow-x-auto custom-scrollbar">
-                 <table className="w-full text-[11px] font-mono border-collapse">
+                 <table className="w-full text-[11px] font-mono border-collapse min-w-[600px]">
                     <thead>
                        <tr className="bg-[#1a0f30] text-purple-300 border-b border-purple-500/20">
-                          <th className="p-3 text-left font-orbitron uppercase">Tanggal</th>
+                          <th className="p-3 text-left font-orbitron uppercase w-40">Tanggal</th>
                           <th className="p-3 text-left font-orbitron uppercase">Platform</th>
                           <th className="p-3 text-right font-orbitron uppercase">Harga Beli</th>
                           <th className="p-3 text-right font-orbitron uppercase">Nominal</th>
+                          <th className="p-3 text-left font-orbitron uppercase">Analysis / Alasan</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-purple-500/10">
@@ -212,6 +209,12 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
                              <td className="p-3"><span className="px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20 text-[9px] uppercase">{item.platform}</span></td>
                              <td className="p-3 text-right text-emerald-400 font-bold">{formatRupiah(item.buyPrice)}</td>
                              <td className="p-3 text-right text-fuchsia-300 font-black">{formatRupiah(item.buyPrice * item.shares)}</td>
+                             <td className="p-3 text-left">
+                                <div className="flex items-start gap-1.5 text-purple-200/80 font-rajdhani italic">
+                                   <MessageSquare className="w-3 h-3 text-fuchsia-500 shrink-0 mt-0.5" />
+                                   <span className="leading-tight">{item.notes || 'Tidak ada catatan analisis.'}</span>
+                                </div>
+                             </td>
                           </tr>
                        ))}
                     </tbody>
