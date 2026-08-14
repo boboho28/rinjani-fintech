@@ -146,9 +146,13 @@ export default function App() {
   };
   const handleDeleteTransaction = (id: string) => { if (window.confirm('Hapus transaksi?')) updateTransactions(transactions.filter((t) => t.id !== id)); };
 
+  // Updated Investment Save Logic (Flat List for merging)
   const handleSaveInvestment = (invData: Omit<Investment, 'id'>, editId?: string) => {
-    if (editId) updateInvestments(investments.map((inv) => (inv.id === editId ? { ...invData, id: editId } : inv)));
-    else updateInvestments([...investments, { ...invData, id: `inv-${Date.now()}` }]);
+    if (editId) {
+      updateInvestments(investments.map((inv) => (inv.id === editId ? { ...invData, id: editId } : inv)));
+    } else {
+      updateInvestments([{ ...invData, id: `inv-${Date.now()}` }, ...investments]);
+    }
     setEditingInv(null);
   };
   const handleDeleteInvestment = (id: string) => { if (window.confirm('Hapus investasi?')) updateInvestments(investments.filter((inv) => inv.id !== id)); };
@@ -243,7 +247,8 @@ export default function App() {
     }
   };
 
-  // Calculations
+  // Calculations (Net worth calculation updated for grouped investments is done internally in InvestmentsView, 
+  // but for global summary we use current list)
   const totalBalance = transactions.reduce((acc, tx) => tx.type === 'income' ? acc + tx.amount : acc - tx.amount, 0);
   const totalInv = investments.reduce((acc, inv) => acc + (inv.currentPrice * inv.shares), 0);
   const totalHutang = debts.filter(d => d.type === 'hutang').reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
