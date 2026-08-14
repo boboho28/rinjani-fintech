@@ -81,7 +81,6 @@ export default function App() {
   const [isGoldModalOpen, setIsGoldModalOpen] = useState(false);
   const [isTickerModalOpen, setIsTickerModalOpen] = useState(false);
 
-  // 1. Firebase Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -90,7 +89,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Firestore Sync Listener
   useEffect(() => {
     if (!user) return;
     const docRef = doc(db, 'users', user.uid, 'settings', 'appData');
@@ -110,7 +108,6 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
-  // 3. Cloud Sync Helper
   const syncToCloud = async (updates: any) => {
     if (!user) return;
     const docRef = doc(db, 'users', user.uid, 'settings', 'appData');
@@ -121,7 +118,6 @@ export default function App() {
     }
   };
 
-  // 4. Logout
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -129,7 +125,6 @@ export default function App() {
     } catch (err) { console.error("Logout Error:", err); }
   };
 
-  // State Updates
   const updateTransactions = (newList: Transaction[]) => { setTransactions(newList); syncToCloud({ transactions: newList }); };
   const updateInvestments = (newList: Investment[]) => { setInvestments(newList); syncToCloud({ investments: newList }); };
   const updateDebts = (newList: DebtItem[]) => { setDebts(newList); syncToCloud({ debts: newList }); };
@@ -138,7 +133,6 @@ export default function App() {
   const updateSavingsGoals = (newList: SavingsGoal[]) => { setSavingsGoals(newList); syncToCloud({ savingsGoals: newList }); };
   const handleSaveMarqueeSettings = (newSettings: MarqueeSettings) => { setMarqueeSettings(newSettings); syncToCloud({ marquee: newSettings }); };
 
-  // Logic Handlers
   const handleSaveTransaction = (txData: Omit<Transaction, 'id'>, editId?: string) => {
     if (editId) updateTransactions(transactions.map((t) => (t.id === editId ? { ...txData, id: editId } : t)));
     else updateTransactions([{ ...txData, id: `tx-${Date.now()}` }, ...transactions]);
@@ -246,15 +240,6 @@ export default function App() {
     }
   };
 
-  const totalBalance = transactions.reduce((acc, tx) => tx.type === 'income' ? acc + tx.amount : acc - tx.amount, 0);
-  const totalInv = investments.reduce((acc, inv) => acc + (inv.buyPrice * inv.shares), 0);
-  const totalHutang = debts.filter(d => d.type === 'hutang').reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
-  const totalPiutang = debts.filter(d => d.type === 'piutang').reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
-  const netWorth = totalBalance + totalInv + totalPiutang - totalHutang;
-  const currentMonthStr = new Date().toISOString().slice(0, 7);
-  const mIn = transactions.filter(t => t.date.startsWith(currentMonthStr) && t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const mEx = transactions.filter(t => t.date.startsWith(currentMonthStr) && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-[#0a0512] flex items-center justify-center">
@@ -272,7 +257,7 @@ export default function App() {
     <div className="h-screen bg-[#0a0512] text-purple-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white overflow-hidden">
       
       <HeaderNavbar
-        activeTab={activeTab} setActiveTab={setActiveTab} totalBalance={totalBalance} netWorth={netWorth}
+        activeTab={activeTab} setActiveTab={setActiveTab} totalBalance={transactions.reduce((acc, tx) => tx.type === 'income' ? acc + tx.amount : acc - tx.amount, 0)} netWorth={0}
         onOpenAddModal={() => { setEditingTx(null); setIsAddTxModalOpen(true); }}
         onOpenAIModal={() => setIsAIModalOpen(true)}
         onExportData={() => exportBackupJSON({ transactions, investments, debts, salaries, budgets, tradings, savingsGoals })}
@@ -283,34 +268,16 @@ export default function App() {
       <RunningTickerBanner settings={marqueeSettings} onOpenSettingsModal={() => setIsTickerModalOpen(true)} />
       
       <div className="flex-1 w-full flex flex-col lg:flex-row overflow-hidden relative">
-        
-        <div className={`
-          fixed inset-0 z-40 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-10
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          bg-[#0a0512] w-72 lg:w-80 h-full border-r border-purple-500/20
-        `}>
+        <div className={`fixed inset-0 z-40 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-10 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} bg-[#0a0512] w-72 lg:w-80 h-full border-r border-purple-500/20`}>
           <div className="h-full overflow-y-auto custom-scrollbar">
-            <SidebarNavigation
-              activeTab={activeTab} 
-              setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }} 
-              onOpenAIModal={() => setIsAIModalOpen(true)}
-              onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
-              onLogout={handleLogout}
-              debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length}
-              unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
-            />
+            <SidebarNavigation activeTab={activeTab} setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }} onOpenAIModal={() => setIsAIModalOpen(true)} onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)} onLogout={handleLogout} debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length} unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length} />
           </div>
         </div>
 
-        {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
+        {isSidebarOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden" onClick={() => setIsSidebarOpen(false)} />}
 
         <main className="flex-1 h-full overflow-y-auto p-3 sm:p-4 lg:p-5 custom-scrollbar relative">
-           {activeTab === 'dashboard' && <DashboardView transactions={transactions} investments={investments} debts={debts} totalBalance={totalBalance} netWorth={netWorth} onOpenAddModal={() => setIsAddTxModalOpen(true)} onOpenAIModal={() => setIsAIModalOpen(true)} onNavigateToTab={setActiveTab} />}
+           {activeTab === 'dashboard' && <DashboardView transactions={transactions} investments={investments} debts={debts} totalBalance={0} netWorth={0} onOpenAddModal={() => setIsAddTxModalOpen(true)} onOpenAIModal={() => setIsAIModalOpen(true)} onNavigateToTab={setActiveTab} />}
            {activeTab === 'jurnal' && <JournalView transactions={transactions} onAddTransaction={() => setIsAddTxModalOpen(true)} onEditTransaction={(tx) => { setEditingTx(tx); setIsAddTxModalOpen(true); }} onDeleteTransaction={handleDeleteTransaction} onOpenAIModal={() => setIsAIModalOpen(true)} />}
            {activeTab === 'laporan' && <MonthlyReportView transactions={transactions} budgets={budgets} onOpenAIModal={() => setIsAIModalOpen(true)} />}
            {activeTab === 'investasi' && <InvestmentsView investments={investments} onAddInvestment={() => setIsAddInvModalOpen(true)} onEditInvestment={(inv) => { setEditingInv(inv); setIsAddInvModalOpen(true); }} onDeleteInvestment={handleDeleteInvestment} onOpenAIModal={() => setIsAIModalOpen(true)} />}
@@ -321,13 +288,12 @@ export default function App() {
         </main>
       </div>
 
-      {/* Modals */}
       <AddTransactionModal isOpen={isAddTxModalOpen} onClose={() => { setIsAddTxModalOpen(false); setEditingTx(null); }} onSave={handleSaveTransaction} editingTransaction={editingTx} />
       <AddInvestmentModal isOpen={isAddInvModalOpen} onClose={() => { setIsAddInvModalOpen(false); setEditingInv(null); }} onSave={handleSaveInvestment} editingInvestment={editingInv} />
       <AddDebtModal isOpen={isAddDebtModalOpen} onClose={() => { setIsAddDebtModalOpen(false); setEditingDebt(null); }} onSave={handleSaveDebt} editingDebt={editingDebt} />
       <AddSalaryModal isOpen={isAddSalaryModalOpen} onClose={() => { setIsAddSalaryModalOpen(false); setEditingSalary(null); }} onSave={handleSaveSalary} editingSalary={editingSalary} />
       <AddTradingModal isOpen={isAddTradingModalOpen} onClose={() => { setIsAddTradingModalOpen(false); setEditingTrading(null); }} onSave={handleSaveTrading} editingTrading={editingTrading} />
-      <AIAssistantModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} financialContext={{ totalBalance, monthlyIncome: mIn, monthlyExpense: mEx, totalInvestment: totalInv, totalDebt: totalHutang, totalReceivable: totalPiutang }} onBatchAddTransactions={() => {}} />
+      <AIAssistantModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} financialContext={{ totalBalance: 0, monthlyIncome: 0, monthlyExpense: 0, totalInvestment: 0, totalDebt: 0, totalReceivable: 0 }} onBatchAddTransactions={() => {}} />
       <CurrencyRateModal isOpen={isRateModalOpen} onClose={() => setIsRateModalOpen(false)} />
       <CryptoMarketModal isOpen={isCryptoModalOpen} onClose={() => setIsCryptoModalOpen(false)} />
       <GoldMarketModal isOpen={isGoldModalOpen} onClose={() => setIsGoldModalOpen(false)} />
