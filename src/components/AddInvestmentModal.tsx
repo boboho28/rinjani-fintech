@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, TrendingUp, Info } from 'lucide-react';
+import { X, Save, TrendingUp, Info, Calendar } from 'lucide-react';
 import { Investment, AssetType } from '../types';
 
 interface AddInvestmentModalProps {
@@ -16,33 +16,37 @@ export const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
   editingInvestment,
 }) => {
   const [symbol, setSymbol] = useState('');
-  const [name, setName] = useState(''); // Kita gunakan untuk label koin/aset
+  const [name, setName] = useState('');
   const [assetType, setAssetType] = useState<AssetType>('Saham');
   const [buyPrice, setBuyPrice] = useState<number>(0);
-  const [nominal, setNominal] = useState<number>(0); // Total IDR yang dikeluarkan
+  const [nominal, setNominal] = useState<number>(0);
   const [platform, setPlatform] = useState('Ajaib Sekuritas');
-  const [buyDate, setBuyDate] = useState(new Date().toISOString().slice(0, 10));
+  const [buyDate, setBuyDate] = useState('');
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    if (editingInvestment) {
-      setSymbol(editingInvestment.symbol);
-      setName(editingInvestment.name);
-      setAssetType(editingInvestment.assetType);
-      setBuyPrice(editingInvestment.buyPrice);
-      setNominal(editingInvestment.buyPrice * editingInvestment.shares);
-      setPlatform(editingInvestment.platform);
-      setBuyDate(editingInvestment.buyDate);
-      setNotes(editingInvestment.notes || '');
-    } else {
-      setSymbol('');
-      setName('');
-      setAssetType('Saham');
-      setBuyPrice(0);
-      setNominal(0);
-      setPlatform('Ajaib Sekuritas');
-      setBuyDate(new Date().toISOString().slice(0, 10));
-      setNotes('');
+    if (isOpen) {
+      if (editingInvestment) {
+        setSymbol(editingInvestment.symbol);
+        setName(editingInvestment.name);
+        setAssetType(editingInvestment.assetType);
+        setBuyPrice(editingInvestment.buyPrice);
+        setNominal(editingInvestment.buyPrice * editingInvestment.shares);
+        setPlatform(editingInvestment.platform);
+        setBuyDate(editingInvestment.buyDate);
+        setNotes(editingInvestment.notes || '');
+      } else {
+        // Otomatis set ke tanggal hari ini saat input baru
+        const today = new Date().toISOString().slice(0, 10);
+        setSymbol('');
+        setName('');
+        setAssetType('Saham');
+        setBuyPrice(0);
+        setNominal(0);
+        setPlatform('Ajaib Sekuritas');
+        setBuyDate(today);
+        setNotes('');
+      }
     }
   }, [editingInvestment, isOpen]);
 
@@ -52,18 +56,17 @@ export const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
     e.preventDefault();
     if (!symbol || buyPrice <= 0 || nominal <= 0) return;
 
-    // Hitung shares otomatis: Nominal / Harga Beli
     const calculatedShares = nominal / buyPrice;
 
     onSave(
       {
         symbol: symbol.toUpperCase().trim(),
-        name: name || symbol.toUpperCase(), // Default name ke simbol jika kosong
+        name: name || symbol.toUpperCase(),
         assetType,
         buyPrice,
-        currentPrice: buyPrice, // Default awal sama dengan beli
+        currentPrice: buyPrice,
         shares: calculatedShares,
-        buyDate,
+        buyDate, // Tanggal yang dipilih/otomatis
         platform,
         notes,
       },
@@ -86,13 +89,6 @@ export const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
           <button onClick={onClose} className="p-1.5 rounded-lg text-purple-400 hover:text-white transition-all cursor-pointer">
             <X className="w-5 h-5" />
           </button>
-        </div>
-
-        <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 flex items-start gap-2.5">
-           <Info className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
-           <p className="text-[10px] text-purple-200 font-rajdhani font-semibold">
-             Simbol yang sama akan otomatis dikelompokkan ke dalam satu kotak aset.
-           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -122,15 +118,27 @@ export const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="text-[10px] font-orbitron font-bold text-purple-400 block mb-1">Nama Aset (Opsional)</label>
-            <input
-              type="text"
-              placeholder="Contoh: Bitcoin"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full bg-[#1a0f30] border border-purple-500/30 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-400"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-orbitron font-bold text-purple-400 block mb-1">Tanggal Beli</label>
+              <input
+                type="date"
+                value={buyDate}
+                onChange={(e) => setBuyDate(e.target.value)}
+                className="w-full bg-[#1a0f30] border border-purple-500/30 text-purple-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-400 font-mono"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-orbitron font-bold text-purple-400 block mb-1">Platform Sekuritas</label>
+              <input
+                type="text"
+                placeholder="Ajaib / Indodax"
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value)}
+                className="w-full bg-[#1a0f30] border border-purple-500/30 text-white rounded-xl px-3 py-2 text-xs focus:outline-none"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -158,23 +166,13 @@ export const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
           </div>
 
           <div>
-            <label className="text-[10px] font-orbitron font-bold text-purple-400 block mb-1">Platform Sekuritas/Aplikasi</label>
-            <input
-              type="text"
-              placeholder="Ajaib / Indodax / Tokocrypto"
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
-              className="w-full bg-[#1a0f30] border border-purple-500/30 text-white rounded-xl px-3 py-2 text-xs focus:outline-none"
-            />
-          </div>
-
-          <div>
             <label className="text-[10px] font-orbitron font-bold text-purple-400 block mb-1">Alasan Pembelian (Analysis)</label>
             <textarea
-              rows={2}
+              rows={3}
+              placeholder="Contoh: Analisis fundamental bagus atau RSI Oversold..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full bg-[#1a0f30] border border-purple-500/30 text-white rounded-xl p-3 text-xs focus:outline-none"
+              className="w-full bg-[#1a0f30] border border-purple-500/30 text-white rounded-xl p-3 text-xs focus:outline-none focus:border-purple-400"
             />
           </div>
 
