@@ -146,7 +146,6 @@ export default function App() {
   };
   const handleDeleteTransaction = (id: string) => { if (window.confirm('Hapus transaksi?')) updateTransactions(transactions.filter((t) => t.id !== id)); };
 
-  // Updated Investment Save Logic (Flat List for merging)
   const handleSaveInvestment = (invData: Omit<Investment, 'id'>, editId?: string) => {
     if (editId) {
       updateInvestments(investments.map((inv) => (inv.id === editId ? { ...invData, id: editId } : inv)));
@@ -247,10 +246,8 @@ export default function App() {
     }
   };
 
-  // Calculations (Net worth calculation updated for grouped investments is done internally in InvestmentsView, 
-  // but for global summary we use current list)
   const totalBalance = transactions.reduce((acc, tx) => tx.type === 'income' ? acc + tx.amount : acc - tx.amount, 0);
-  const totalInv = investments.reduce((acc, inv) => acc + (inv.currentPrice * inv.shares), 0);
+  const totalInv = investments.reduce((acc, inv) => acc + (inv.buyPrice * inv.shares), 0);
   const totalHutang = debts.filter(d => d.type === 'hutang').reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
   const totalPiutang = debts.filter(d => d.type === 'piutang').reduce((acc, d) => acc + (d.totalAmount - d.paidAmount), 0);
   const netWorth = totalBalance + totalInv + totalPiutang - totalHutang;
@@ -287,7 +284,6 @@ export default function App() {
       
       <div className="flex-1 w-full flex flex-col lg:flex-row overflow-hidden relative">
         
-        {/* Sidebar with Responsive classes */}
         <div className={`
           fixed inset-0 z-40 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-10
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -306,7 +302,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Overlay for mobile sidebar */}
         {isSidebarOpen && (
           <div 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
