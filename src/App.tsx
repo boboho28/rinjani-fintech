@@ -46,12 +46,13 @@ import { CurrencyRateModal } from './components/CurrencyRateModal';
 import { CryptoMarketModal } from './components/CryptoMarketModal';
 import { GoldMarketModal } from './components/GoldMarketModal';
 import { TickerSettingsModal } from './components/TickerSettingsModal';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Menu, X } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Core App State
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -268,34 +269,47 @@ export default function App() {
   return (
     <div className="h-screen bg-[#0a0512] text-purple-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white overflow-hidden">
       
-      {/* 1. Navbar - Fixed at Top */}
       <HeaderNavbar
         activeTab={activeTab} setActiveTab={setActiveTab} totalBalance={totalBalance} netWorth={netWorth}
         onOpenAddModal={() => { setEditingTx(null); setIsAddTxModalOpen(true); }}
         onOpenAIModal={() => setIsAIModalOpen(true)}
         onExportData={() => exportBackupJSON({ transactions, investments, debts, salaries, budgets, tradings, savingsGoals })}
         onResetDemo={() => alert("Gunakan Firestore Console untuk reset data cloud.")}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
       
-      {/* 2. Ticker - Fixed below Navbar */}
       <RunningTickerBanner settings={marqueeSettings} onOpenSettingsModal={() => setIsTickerModalOpen(true)} />
       
-      {/* 3. Main Container Area - Flex Row and Overflow Hidden to allow internal scroll */}
-      <div className="flex-1 w-full flex flex-row overflow-hidden relative">
+      <div className="flex-1 w-full flex flex-col lg:flex-row overflow-hidden relative">
         
-        {/* Sidebar Navigation - Fixed/Sticky on the Left */}
-        <div className="h-full overflow-y-auto border-r border-purple-500/20">
-          <SidebarNavigation
-            activeTab={activeTab} setActiveTab={setActiveTab} onOpenAIModal={() => setIsAIModalOpen(true)}
-            onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
-            onLogout={handleLogout}
-            debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length}
-            unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
-          />
+        {/* Sidebar with Responsive classes */}
+        <div className={`
+          fixed inset-0 z-40 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-10
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          bg-[#0a0512] w-72 lg:w-80 h-full border-r border-purple-500/20
+        `}>
+          <div className="h-full overflow-y-auto custom-scrollbar">
+            <SidebarNavigation
+              activeTab={activeTab} 
+              setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }} 
+              onOpenAIModal={() => setIsAIModalOpen(true)}
+              onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
+              onLogout={handleLogout}
+              debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length}
+              unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
+            />
+          </div>
         </div>
 
-        {/* --- MAIN SCROLLABLE CONTENT AREA --- */}
-        <main className="flex-1 h-full overflow-y-auto p-3 sm:p-4 lg:p-5 custom-scrollbar">
+        {/* Overlay for mobile sidebar */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        <main className="flex-1 h-full overflow-y-auto p-3 sm:p-4 lg:p-5 custom-scrollbar relative">
            {activeTab === 'dashboard' && <DashboardView transactions={transactions} investments={investments} debts={debts} totalBalance={totalBalance} netWorth={netWorth} onOpenAddModal={() => setIsAddTxModalOpen(true)} onOpenAIModal={() => setIsAIModalOpen(true)} onNavigateToTab={setActiveTab} />}
            {activeTab === 'jurnal' && <JournalView transactions={transactions} onAddTransaction={() => setIsAddTxModalOpen(true)} onEditTransaction={(tx) => { setEditingTx(tx); setIsAddTxModalOpen(true); }} onDeleteTransaction={handleDeleteTransaction} onOpenAIModal={() => setIsAIModalOpen(true)} />}
            {activeTab === 'laporan' && <MonthlyReportView transactions={transactions} budgets={budgets} onOpenAIModal={() => setIsAIModalOpen(true)} />}
