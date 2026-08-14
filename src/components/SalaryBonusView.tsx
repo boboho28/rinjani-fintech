@@ -8,7 +8,9 @@ import {
   Building, 
   Edit3, 
   Trash2,
-  Receipt
+  Receipt,
+  History,
+  Wallet
 } from 'lucide-react';
 import { SalaryBonus } from '../types';
 import { formatRupiah, formatDateIndo } from '../utils/formatters';
@@ -30,7 +32,17 @@ export const SalaryBonusView: React.FC<SalaryBonusViewProps> = ({
   onClaimToJournal,
   onOpenAIModal,
 }) => {
-  const filteredSalaries = salaries;
+  // Fitur Baru: State untuk memisahkan tampilan Belum Klaim dan Sudah Cair
+  const [activeSubTab, setActiveSubTab] = useState<'pending' | 'claimed'>('pending');
+
+  // Filter data berdasarkan status klaim ke jurnal
+  const pendingSalaries = salaries.filter((s) => !s.isClaimedToJournal);
+  const claimedSalaries = salaries.filter((s) => s.isClaimedToJournal);
+
+  // Menentukan data mana yang akan ditampilkan di list
+  const filteredSalaries = activeSubTab === 'pending' ? pendingSalaries : claimedSalaries;
+
+  // Perhitungan Ringkasan Tetap Global (Mengambil dari semua data)
   const totalNettReceived = salaries.filter((s) => s.status === 'diterima').reduce((sum, s) => sum + s.nettAmount, 0);
   const totalPendingScheduled = salaries.filter((s) => s.status === 'dijadwalkan').reduce((sum, s) => sum + s.nettAmount, 0);
 
@@ -51,7 +63,7 @@ export const SalaryBonusView: React.FC<SalaryBonusViewProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-[#130b20]/80 border border-purple-500/30 rounded-2xl p-5 flex items-center justify-between shadow-neo-purple backdrop-blur-sm">
             <div><p className="text-[10px] font-orbitron font-bold text-purple-400 uppercase tracking-widest">Total Diterima</p><p className="text-2xl font-mono font-black text-emerald-400 mt-1">{formatRupiah(totalNettReceived)}</p></div>
             <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400"><CheckCircle2 className="w-6 h-6" /></div>
@@ -61,18 +73,53 @@ export const SalaryBonusView: React.FC<SalaryBonusViewProps> = ({
             <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400"><Clock className="w-6 h-6" /></div>
           </div>
         </div>
+
+        {/* --- SUB-TAB NAVIGATION (BARU) --- */}
+        <div className="flex items-center gap-2 bg-[#1a0f30] p-1.5 rounded-2xl border border-purple-500/30 w-fit">
+          <button
+            onClick={() => setActiveSubTab('pending')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-orbitron font-bold text-[10px] transition-all cursor-pointer ${
+              activeSubTab === 'pending' 
+              ? 'bg-gradient-to-r from-purple-600 to-fuchsia-700 text-white shadow-neo-purple' 
+              : 'text-purple-400/60 hover:text-purple-200'
+            }`}
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span>BELUM DIKLAIM ({pendingSalaries.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('claimed')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-orbitron font-bold text-[10px] transition-all cursor-pointer ${
+              activeSubTab === 'claimed' 
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-neo-green' 
+              : 'text-emerald-400/60 hover:text-emerald-200'
+            }`}
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>RIWAYAT CAIR ({claimedSalaries.length})</span>
+          </button>
+        </div>
       </div>
 
       <div className="space-y-5">
         {filteredSalaries.length === 0 ? (
-          <div className="py-20 text-center text-purple-400/50 font-orbitron text-sm uppercase tracking-widest opacity-30">Tidak ada catatan income.</div>
+          <div className="py-20 text-center text-purple-400/50 font-orbitron text-sm uppercase tracking-widest opacity-30">
+            {activeSubTab === 'pending' ? 'Semua gaji sudah diklaim.' : 'Belum ada riwayat klaim gaji.'}
+          </div>
         ) : (
           filteredSalaries.map((item) => (
-            <div key={item.id} className="relative bg-[#130b20]/80 border border-purple-500/30 hover:border-purple-400 rounded-2xl p-6 space-y-4 shadow-neo-purple transition-all overflow-hidden group">
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/70 to-transparent" />
+            <div key={item.id} className={`relative bg-[#130b20]/80 border rounded-2xl p-6 space-y-4 shadow-neo-purple transition-all overflow-hidden group ${item.isClaimedToJournal ? 'border-emerald-500/30' : 'border-purple-500/30 hover:border-purple-400'}`}>
+              <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-${item.isClaimedToJournal ? 'emerald' : 'purple'}-400/70 to-transparent`} />
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2"><span className="px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 uppercase tracking-wider">{item.type.replace('_', ' ')}</span><span className="text-[10px] font-orbitron font-bold text-purple-200/80 bg-[#1a0f30] border border-purple-500/30 px-3 py-1 rounded-lg">{item.period}</span><span className={`px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg border flex items-center gap-1.5 ${item.status === 'diterima' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'}`}>{item.status === 'diterima' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}<span>{item.status === 'diterima' ? 'CAIR' : 'PENDING'}</span></span></div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 uppercase tracking-wider">{item.type.replace('_', ' ')}</span>
+                    <span className="text-[10px] font-orbitron font-bold text-purple-200/80 bg-[#1a0f30] border border-purple-500/30 px-3 py-1 rounded-lg">{item.period}</span>
+                    <span className={`px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg border flex items-center gap-1.5 ${item.status === 'diterima' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'}`}>
+                      {item.status === 'diterima' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                      <span>{item.status === 'diterima' ? 'CAIR' : 'PENDING'}</span>
+                    </span>
+                  </div>
                   <h3 className="font-orbitron font-bold text-lg text-purple-100 uppercase tracking-tight">{item.title}</h3>
                   <div className="flex items-center gap-2 text-xs text-purple-300/80 font-rajdhani font-semibold"><Building className="w-3.5 h-3.5 text-purple-400" /><span>{item.sourceCompany}</span><span className="text-purple-500/50">•</span><span className="font-mono">{formatDateIndo(item.date)}</span></div>
                 </div>
