@@ -30,13 +30,13 @@ export interface Investment {
   assetType: AssetType;
   buyPrice: number;
   currentPrice: number;
-  shares: number;
-  buyDate: string; // Field Tanggal Pembelian
+  shares: number; // lembar or unit
+  buyDate: string;
   platform: string;
-  notes: string; // Field Alasan/Analisis
+  notes: string;
 }
 
-export type DebtType = 'hutang' | 'piutang';
+export type DebtType = 'hutang' | 'piutang'; // hutang: kita pinjam, piutang: orang pinjam ke kita
 export type DebtStatus = 'belum_lunas' | 'sebagian' | 'lunas';
 
 export interface DebtPayment {
@@ -60,7 +60,13 @@ export interface DebtItem {
   payments: DebtPayment[];
 }
 
-export type IncomeSourceType = 'gaji_pokok' | 'bonus_kinerja' | 'tunjangan' | 'thr' | 'lembur' | 'sampingan';
+export type IncomeSourceType = 
+  | 'gaji_pokok'
+  | 'bonus_kinerja'
+  | 'tunjangan'
+  | 'thr'
+  | 'lembur'
+  | 'sampingan';
 
 export interface SalaryBonus {
   id: string;
@@ -72,7 +78,7 @@ export interface SalaryBonus {
   deductions: number;
   nettAmount: number;
   date: string;
-  period: string;
+  period: string; // e.g. "Agustus 2026", "Q3 2026"
   status: 'diterima' | 'dijadwalkan';
   isClaimedToJournal?: boolean;
   notes: string;
@@ -84,8 +90,25 @@ export interface BudgetCategory {
   icon?: string;
 }
 
-export type MarqueeFontFamily = 'font-orbitron' | 'font-press-start' | 'font-audiowide' | 'font-monoton' | 'font-chakra' | 'font-permanent' | 'font-vt323' | 'font-share-tech' | 'font-russo' | 'font-rajdhani';
-export type MarqueeColorTheme = 'gold' | 'emerald' | 'cyan' | 'pink' | 'purple' | 'rainbow';
+export type MarqueeFontFamily = 
+  | 'font-orbitron'
+  | 'font-press-start'
+  | 'font-audiowide'
+  | 'font-monoton'
+  | 'font-chakra'
+  | 'font-permanent'
+  | 'font-vt323'
+  | 'font-share-tech'
+  | 'font-russo'
+  | 'font-rajdhani';
+
+export type MarqueeColorTheme = 
+  | 'gold'
+  | 'emerald'
+  | 'cyan'
+  | 'pink'
+  | 'purple'
+  | 'rainbow';
 
 export interface MarqueeSettings {
   text: string;
@@ -95,17 +118,34 @@ export interface MarqueeSettings {
   isEnabled: boolean;
 }
 
-export type ActiveTab = 'dashboard' | 'jurnal' | 'laporan' | 'investasi' | 'hutang_piutang' | 'gaji_bonus' | 'trading' | 'tabungan';
+export type ActiveTab = 
+  | 'dashboard'
+  | 'jurnal'
+  | 'laporan'
+  | 'investasi'
+  | 'hutang_piutang'
+  | 'gaji_bonus'
+  | 'trading'
+  | 'tabungan';
 
 export interface SavingsDeposit {
   id: string;
-  date: string;
+  date: string; // YYYY-MM-DD
   amount: number;
   account: AccountType;
   note?: string;
 }
 
-export type SavingsCategory = 'Kendaraan' | 'Properti' | 'Dana Darurat' | 'Liburan / Travel' | 'Gadget / Elektronik' | 'Pendidikan' | 'Pernikahan' | 'Investasi / Business' | 'Lainnya';
+export type SavingsCategory = 
+  | 'Kendaraan' 
+  | 'Properti' 
+  | 'Dana Darurat' 
+  | 'Liburan / Travel' 
+  | 'Gadget / Elektronik' 
+  | 'Pendidikan' 
+  | 'Pernikahan' 
+  | 'Investasi / Business' 
+  | 'Lainnya';
 
 export interface SavingsGoal {
   id: string;
@@ -113,8 +153,8 @@ export interface SavingsGoal {
   category: SavingsCategory;
   targetAmount: number;
   currentAmount: number;
-  targetDate: string;
-  startDate: string;
+  targetDate: string; // YYYY-MM-DD
+  startDate: string; // YYYY-MM-DD
   sourceAccount?: AccountType;
   notes?: string;
   isCompleted?: boolean;
@@ -122,13 +162,34 @@ export interface SavingsGoal {
 }
 
 export type TradingType = 'profit' | 'loss';
-export type TradingPair = 'XAUUSD (GOLD)' | 'EURUSD' | 'GBPUSD' | 'USDJPY' | 'BTCUSD' | 'ETHUSD' | 'US30' | 'NAS100' | 'AUDUSD' | 'USDCAD' | 'Lainnya';
-export type TradingStrategy = 'Scalping' | 'Day Trading' | 'Swing Trading' | 'Breakout / Retest' | 'SMC / ICT Concept' | 'News Trading / NFP' | 'Price Action';
+
+export type TradingPair = 
+  | 'XAUUSD (GOLD)' 
+  | 'EURUSD' 
+  | 'GBPUSD' 
+  | 'USDJPY' 
+  | 'BTCUSD' 
+  | 'ETHUSD' 
+  | 'US30' 
+  | 'NAS100' 
+  | 'AUDUSD' 
+  | 'USDCAD' 
+  | 'Lainnya';
+
+export type TradingStrategy = 
+  | 'Scalping' 
+  | 'Day Trading' 
+  | 'Swing Trading' 
+  | 'Breakout / Retest' 
+  | 'SMC / ICT Concept' 
+  | 'News Trading / NFP' 
+  | 'Price Action';
+
 export type TradingResultStatus = 'TP (Take Profit)' | 'SL (Stop Loss)' | 'Cut Profit' | 'Cut Loss';
 
 export interface TradingJournalItem {
   id: string;
-  date: string;
+  date: string; // YYYY-MM-DD
   title: string;
   pair: TradingPair;
   action: 'BUY' | 'SELL';
@@ -136,11 +197,11 @@ export interface TradingJournalItem {
   entryPrice: number;
   exitPrice: number;
   profitPips: number;
-  profitUSD?: number;
-  exchangeRateUSD?: number;
-  profitAmount: number;
-  type: TradingType;
-  broker: string;
+  profitUSD?: number; // Nominal untung/rugi dalam USD ($)
+  exchangeRateUSD?: number; // Rate konversi USD ke IDR (default e.g. 16000)
+  profitAmount: number; // Nominal untung/rugi IDR (konversi: profitUSD * exchangeRateUSD)
+  type: TradingType; // 'profit' | 'loss'
+  broker: string; // e.g. "Exness", "XM Global", "HFM", "OctaFX"
   strategy: TradingStrategy;
   account: AccountType;
   status: TradingResultStatus;
