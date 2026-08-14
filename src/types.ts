@@ -25,15 +25,15 @@ export type AssetType = 'Saham' | 'Reksadana' | 'Emas' | 'Crypto' | 'Obligasi / 
 
 export interface Investment {
   id: string;
-  name: string; // Nama aset/koin
-  symbol: string; // Ticker
+  name: string;
+  symbol: string;
   assetType: AssetType;
-  buyPrice: number; // Harga per unit saat beli
-  currentPrice: number; // Harga pasar saat ini
-  shares: number; // Jumlah unit yang didapat
-  buyDate: string;
+  buyPrice: number;
+  currentPrice: number;
+  shares: number;
+  buyDate: string; // Field Tanggal Pembelian
   platform: string;
-  notes: string;
+  notes: string; // Field Alasan/Analisis
 }
 
 export type DebtType = 'hutang' | 'piutang';
