@@ -12,7 +12,9 @@ import {
   Calendar,
   Check,
   UserCheck,
-  User
+  User,
+  History,
+  Wallet
 } from 'lucide-react';
 import { DebtItem, DebtType, DebtStatus } from '../types';
 import { formatRupiah, formatDateIndo } from '../utils/formatters';
@@ -35,11 +37,18 @@ export const DebtView: React.FC<DebtViewProps> = ({
   onOpenAIModal,
 }) => {
   const [activeTabType, setActiveTabType] = useState<'all' | 'hutang' | 'piutang'>('all');
+  // Fitur Baru: State untuk memisahkan daftar Aktif dan Lunas
+  const [activeStatusTab, setActiveStatusTab] = useState<'active' | 'completed'>('active');
+  
   const [paymentModalDebt, setPaymentModalDebt] = useState<DebtItem | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [paymentNote, setPaymentNote] = useState<string>('');
 
-  const filteredDebts = debts.filter((d) => {
+  // Logika Filter Data
+  const activeDebts = debts.filter((d) => (d.totalAmount - d.paidAmount) > 0);
+  const completedDebts = debts.filter((d) => (d.totalAmount - d.paidAmount) <= 0);
+
+  const displayedDebts = (activeStatusTab === 'active' ? activeDebts : completedDebts).filter((d) => {
     if (activeTabType === 'all') return true;
     return d.type === activeTabType;
   });
@@ -62,7 +71,7 @@ export const DebtView: React.FC<DebtViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn pb-10">
       
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#130b20]/80 border border-purple-500/30 rounded-2xl p-6 shadow-neo-purple">
@@ -123,14 +132,40 @@ export const DebtView: React.FC<DebtViewProps> = ({
         </div>
       </div>
 
-      {/* Filter Tabs */}
+      {/* --- SUB-TAB STATUS NAVIGATION --- */}
+      <div className="flex flex-wrap items-center gap-3 bg-[#130b20]/50 p-2 rounded-2xl border border-purple-500/20 w-fit">
+        <button
+          onClick={() => setActiveStatusTab('active')}
+          className={`flex items-center gap-2 px-5 py-2 rounded-xl font-orbitron font-bold text-[10px] sm:text-xs transition-all cursor-pointer ${
+            activeStatusTab === 'active' 
+            ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-neo-purple border border-fuchsia-400/40' 
+            : 'text-purple-400/60 hover:text-purple-200'
+          }`}
+        >
+          <Wallet className="w-4 h-4" />
+          <span>DAFTAR AKTIF ({activeDebts.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveStatusTab('completed')}
+          className={`flex items-center gap-2 px-5 py-2 rounded-xl font-orbitron font-bold text-[10px] sm:text-xs transition-all cursor-pointer ${
+            activeStatusTab === 'completed' 
+            ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-neo-green border border-emerald-400/40' 
+            : 'text-emerald-400/60 hover:text-emerald-200'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span>RIWAYAT LUNAS ({completedDebts.length})</span>
+        </button>
+      </div>
+
+      {/* Filter Type Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => setActiveTabType('all')}
-          className={`px-4 py-2 rounded-xl text-xs font-orbitron font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-[10px] font-orbitron font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border ${
             activeTabType === 'all'
-              ? 'bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white shadow-neo-purple'
-              : 'bg-[#130b20]/80 text-purple-200/70 hover:text-white border border-purple-500/30'
+              ? 'bg-purple-500/20 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+              : 'bg-[#130b20]/80 text-purple-200/70 hover:text-white border-purple-500/30'
           }`}
         >
           Semua Catatan
@@ -138,168 +173,174 @@ export const DebtView: React.FC<DebtViewProps> = ({
 
         <button
           onClick={() => setActiveTabType('hutang')}
-          className={`px-4 py-2 rounded-xl text-xs font-orbitron font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-[10px] font-orbitron font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border ${
             activeTabType === 'hutang'
-              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
-              : 'bg-[#130b20]/80 text-purple-200/70 hover:text-white border border-purple-500/30'
+              ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-md shadow-rose-500/10'
+              : 'bg-[#130b20]/80 text-purple-200/70 hover:text-white border-purple-500/30'
           }`}
         >
-          Hutang Saya (Pinjaman)
+          Hutang Saya
         </button>
 
         <button
           onClick={() => setActiveTabType('piutang')}
-          className={`px-4 py-2 rounded-xl text-xs font-orbitron font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-[10px] font-orbitron font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border ${
             activeTabType === 'piutang'
-              ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
-              : 'bg-[#130b20]/80 text-purple-200/70 hover:text-white border border-purple-500/30'
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/10'
+              : 'bg-[#130b20]/80 text-purple-200/70 hover:text-white border-purple-500/30'
           }`}
         >
-          Piutang Saya (Tagihan)
+          Piutang Saya
         </button>
       </div>
 
       {/* Debt List Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {filteredDebts.map((item) => {
-          const remainingAmount = item.totalAmount - item.paidAmount;
-          const percentagePaid = item.totalAmount > 0 ? (item.paidAmount / item.totalAmount) * 100 : 0;
-          const isLunas = remainingAmount <= 0;
+        {displayedDebts.length === 0 ? (
+          <div className="col-span-full py-20 text-center bg-[#130b20]/40 border-2 border-dashed border-purple-500/20 rounded-3xl">
+             <AlertCircle className="w-12 h-12 text-purple-500/30 mx-auto mb-3" />
+             <p className="font-orbitron font-bold text-purple-300/40 uppercase tracking-widest text-sm">
+                {activeStatusTab === 'active' ? 'Tidak ada hutang/piutang aktif.' : 'Belum ada riwayat lunas.'}
+             </p>
+          </div>
+        ) : (
+          displayedDebts.map((item) => {
+            const remainingAmount = item.totalAmount - item.paidAmount;
+            const percentagePaid = item.totalAmount > 0 ? (item.paidAmount / item.totalAmount) * 100 : 0;
+            const isLunas = remainingAmount <= 0;
 
-          return (
-            <div
-              key={item.id}
-              className={`relative bg-[#130b20]/80 border rounded-2xl p-6 space-y-4 shadow-neo-purple transition-all overflow-hidden group ${
-                isLunas ? 'border-emerald-500/50 opacity-90' : 'border-purple-500/30 hover:border-purple-400'
-              }`}
-            >
-              {/* Top subtle purple/emerald highlight line */}
+            return (
               <div
-                className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${
-                  isLunas
-                    ? 'from-transparent via-emerald-400/80 to-transparent'
-                    : 'from-transparent via-purple-400/80 to-transparent'
+                key={item.id}
+                className={`relative bg-[#130b20]/80 border rounded-2xl p-6 space-y-4 shadow-neo-purple transition-all overflow-hidden group ${
+                  isLunas ? 'border-emerald-500/50 opacity-90' : 'border-purple-500/30 hover:border-purple-400'
                 }`}
-              />
+              >
+                <div
+                  className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${
+                    isLunas
+                      ? 'from-transparent via-emerald-400/80 to-transparent'
+                      : 'from-transparent via-purple-400/80 to-transparent'
+                  }`}
+                />
 
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg uppercase tracking-wider border shadow-sm ${
-                        item.type === 'hutang'
-                          ? 'bg-rose-950/70 text-rose-300 border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
-                          : 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
-                      }`}
-                    >
-                      {item.type === 'hutang' ? 'Hutang Saya' : 'Piutang Saya'}
-                    </span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg uppercase tracking-wider border shadow-sm ${
+                          item.type === 'hutang'
+                            ? 'bg-rose-950/70 text-rose-300 border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
+                            : 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                        }`}
+                      >
+                        {item.type === 'hutang' ? 'Hutang Saya' : 'Piutang Saya'}
+                      </span>
 
-                    <span
-                      className={`px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg border flex items-center gap-1.5 ${
-                        isLunas
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
-                          : percentagePaid > 0
-                          ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-neo-purple'
-                          : 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-[0_0_12px_rgba(244,63,94,0.2)]'
-                      }`}
-                    >
-                      {isLunas ? '✓ Lunas' : percentagePaid > 0 ? 'Cicilan Sebagian' : 'Belum Lunas'}
-                    </span>
+                      <span
+                        className={`px-3 py-1 text-[11px] font-orbitron font-extrabold rounded-lg border flex items-center gap-1.5 ${
+                          isLunas
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                            : percentagePaid > 0
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-neo-purple'
+                            : 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-[0_0_12px_rgba(244,63,94,0.2)]'
+                        }`}
+                      >
+                        {isLunas ? '✓ Lunas' : percentagePaid > 0 ? 'Cicilan Sebagian' : 'Belum Lunas'}
+                      </span>
+                    </div>
+
+                    <h3 className="font-orbitron font-bold text-lg text-purple-100 tracking-wide group-hover:text-purple-300 transition-colors mt-1">
+                      {item.title}
+                    </h3>
+
+                    <div className="flex items-center gap-1.5 text-xs text-purple-300/80 font-rajdhani font-semibold">
+                      <div className="flex items-center gap-1.5 bg-[#1a0f30] px-2.5 py-1 rounded-md border border-purple-500/20">
+                        <User className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="text-purple-200">{item.personName}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <h3 className="font-orbitron font-bold text-lg text-purple-100 tracking-wide group-hover:text-purple-300 transition-colors mt-1">
-                    {item.title}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onEditDebt(item)}
+                      title="Edit Catatan Hutang/Piutang"
+                      className="p-2.5 rounded-xl bg-[#1a0f30] hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-400/60 transition-all cursor-pointer shadow-sm"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onDeleteDebt(item.id)}
+                      title="Hapus Catatan"
+                      className="p-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/40 hover:border-rose-400 transition-all cursor-pointer shadow-sm"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-purple-300/80 font-rajdhani font-semibold">
-                    <div className="flex items-center gap-1.5 bg-[#1a0f30] px-2.5 py-1 rounded-md border border-purple-500/20">
-                      <User className="w-3.5 h-3.5 text-purple-400" />
-                      <span className="text-purple-200">{item.personName}</span>
+                <div className="bg-[#1a0f30] p-4 rounded-xl border border-purple-500/30 space-y-3">
+                  <div className="grid grid-cols-3 gap-2 text-xs border-b border-purple-500/15 pb-3">
+                    <div>
+                      <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Total Pinjaman</p>
+                      <p className="font-mono font-bold text-sm text-purple-100 mt-1">{formatRupiah(item.totalAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Telah Dibayar</p>
+                      <p className="font-mono font-bold text-sm text-emerald-400 mt-1">{formatRupiah(item.paidAmount)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Sisa Kewajiban</p>
+                      <p className={`font-mono font-black text-sm mt-1 ${remainingAmount > 0 ? 'text-rose-400 drop-shadow-[0_0_6px_rgba(244,63,94,0.4)]' : 'text-emerald-400'}`}>
+                        {formatRupiah(remainingAmount)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="w-full bg-[#0d0718] h-3 rounded-full overflow-hidden border border-purple-500/30 p-0.5">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-purple-400 shadow-[0_0_12px_rgba(16,185,129,0.5)] rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(percentagePaid, 100)}%` }}
+                      />
+                    </div>
+
+                    <div className="flex flex-col xs:flex-row xs:items-center justify-between text-[10px] sm:text-xs font-mono pt-1 gap-2">
+                      <span className="flex items-center gap-1.5 text-purple-200/80">
+                        <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                        <span>Jatuh Tempo: <strong className="text-purple-100 font-bold">{formatDateIndo(item.dueDate)}</strong></span>
+                      </span>
+                      <span className="text-purple-300 font-orbitron font-bold text-[10px] px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 self-start">
+                        {percentagePaid.toFixed(0)}% Terbayar
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {item.notes && (
+                  <div className="bg-[#1a0f30] border-l-4 border-purple-500 rounded-r-xl p-3 text-xs font-rajdhani font-semibold text-purple-200/90 italic flex items-start gap-2.5">
+                    <span>"{item.notes}"</span>
+                  </div>
+                )}
+
+                {/* Tombol Bayar hanya tampil di tab Daftar Aktif (Hanya yang belum lunas) */}
+                {!isLunas && (
                   <button
-                    onClick={() => onEditDebt(item)}
-                    title="Edit Catatan Hutang/Piutang"
-                    className="p-2.5 rounded-xl bg-[#1a0f30] hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-400/60 transition-all cursor-pointer shadow-sm"
+                    onClick={() => {
+                      setPaymentModalDebt(item);
+                      setPaymentAmount(remainingAmount);
+                    }}
+                    className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-orbitron font-black text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_22px_rgba(16,185,129,0.5)] transition-all cursor-pointer"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Plus className="w-4 h-4 text-slate-950 font-bold" />
+                    <span>Catat Pembayaran Cicilan / Pelunasan</span>
                   </button>
-                  <button
-                    onClick={() => onDeleteDebt(item.id)}
-                    title="Hapus Catatan"
-                    className="p-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/40 hover:border-rose-400 transition-all cursor-pointer shadow-sm"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                )}
               </div>
-
-              {/* Progress & Amount Grid Box */}
-              <div className="bg-[#1a0f30] p-4 rounded-xl border border-purple-500/30 space-y-3">
-                <div className="grid grid-cols-3 gap-2 text-xs border-b border-purple-500/15 pb-3">
-                  <div>
-                    <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Total Pinjaman</p>
-                    <p className="font-mono font-bold text-sm text-purple-100 mt-1">{formatRupiah(item.totalAmount)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Telah Dibayar</p>
-                    <p className="font-mono font-bold text-sm text-emerald-400 mt-1">{formatRupiah(item.paidAmount)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-orbitron font-bold text-purple-400/80 uppercase tracking-wider">Sisa Kewajiban</p>
-                    <p className={`font-mono font-black text-sm mt-1 drop-shadow-[0_0_6px_rgba(244,63,94,0.4)] ${remainingAmount > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {formatRupiah(remainingAmount)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Cyber Progress Bar */}
-                <div className="space-y-1.5">
-                  <div className="w-full bg-[#0d0718] h-3 rounded-full overflow-hidden border border-purple-500/30 p-0.5">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-purple-400 shadow-[0_0_12px_rgba(16,185,129,0.5)] rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(percentagePaid, 100)}%` }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs font-mono pt-1">
-                    <span className="flex items-center gap-1.5 text-purple-200/80">
-                      <Calendar className="w-3.5 h-3.5 text-purple-400" />
-                      <span>Jatuh Tempo: <strong className="text-purple-100 font-bold">{formatDateIndo(item.dueDate)}</strong></span>
-                    </span>
-                    <span className="text-purple-300 font-orbitron font-bold text-[11px] px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20">
-                      {percentagePaid.toFixed(0)}% Terbayar
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {item.notes && (
-                <div className="bg-[#1a0f30] border-l-4 border-purple-500 rounded-r-xl p-3 text-xs font-rajdhani font-semibold text-purple-200/90 italic flex items-start gap-2.5">
-                  <span>"{item.notes}"</span>
-                </div>
-              )}
-
-              {/* Payment Action Button */}
-              {!isLunas && (
-                <button
-                  onClick={() => {
-                    setPaymentModalDebt(item);
-                    setPaymentAmount(remainingAmount);
-                  }}
-                  className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-orbitron font-black text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_22px_rgba(16,185,129,0.5)] transition-all cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 text-slate-950 font-bold" />
-                  <span>Catat Pembayaran Cicilan / Pelunasan</span>
-                </button>
-              )}
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {/* Payment Entry Modal */}
