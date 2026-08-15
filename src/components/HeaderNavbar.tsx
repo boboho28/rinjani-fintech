@@ -72,7 +72,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
             <div className="relative shrink-0">
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-purple-700 via-fuchsia-500 to-pink-400 p-0.5 shadow-neo-purple">
                 <div className="w-full h-full bg-[#120a21] rounded-[10px] flex items-center justify-center">
-                  <span className="font-orbitron font-black text-fuchsia-300 text-lg tracking-widest">R</span>
+                  <span className="font-orbitron font-black text-fuchsia-300 text-lg tracking-widest">MDG</span>
                 </div>
               </div>
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-fuchsia-400 shadow-[0_0_10px_#e879f9] animate-pulse" />
@@ -80,7 +80,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
 
             <div className="overflow-hidden">
               <h1 className="font-orbitron font-black text-sm sm:text-xl tracking-wider text-cyber-gold drop-shadow-[0_2px_8px_rgba(168,85,247,0.35)] truncate">
-                RINJANI FINTECH
+                MONEY DENDA GIANA
               </h1>
               <p className="text-[9px] sm:text-[11px] font-rajdhani font-semibold tracking-wider text-purple-200/80 truncate">
                 SYSTEM REAL-TIME DASHBOARD
