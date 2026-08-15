@@ -13,7 +13,8 @@ import {
   Award,
   CandlestickChart,
   Target,
-  PiggyBank
+  PiggyBank,
+  Percent
 } from 'lucide-react';
 import { ActiveTab } from '../types';
 
@@ -24,6 +25,7 @@ interface SidebarNavigationProps {
   onOpenRateModal?: () => void;
   onOpenCryptoModal?: () => void;
   onOpenGoldModal?: () => void;
+  onOpenSCModal?: () => void;
   onLogout?: () => void;
   debtCount?: number;
   pendingBonusCount?: number;
@@ -38,6 +40,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   onOpenRateModal,
   onOpenCryptoModal,
   onOpenGoldModal,
+  onOpenSCModal,
   onLogout,
   debtCount = 0,
   pendingBonusCount = 0,
@@ -45,7 +48,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   activeGoalsCount = 0,
 }) => {
   const menuItems = [
-    { id: 'dashboard' as ActiveTab, label: 'DASHBOARD RINJANI', sublabel: 'Saldo Harian Real-time', icon: LayoutDashboard, badge: 'LIVE', badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' },
+    { id: 'dashboard' as ActiveTab, label: 'DASHBOARD UTAMA', sublabel: 'Saldo Harian Real-time', icon: LayoutDashboard, badge: 'LIVE', badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' },
     { id: 'jurnal' as ActiveTab, label: 'SERAH TERIMA KAS', sublabel: 'Arus Keluar Masuk Duit', icon: Receipt, badge: null },
     { id: 'laporan' as ActiveTab, label: 'DATA REPORTAN', sublabel: 'Ringkasan & Analisis', icon: PieChart, badge: null },
     { id: 'investasi' as ActiveTab, label: 'PORTOFOLIO SAHAM', sublabel: 'Saham, Emas & Crypto', icon: TrendingUp, badge: null },
@@ -60,16 +63,48 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       <div className="space-y-4">
         <div className="bg-[#140b24] border border-purple-500/35 rounded-2xl p-3 space-y-2 shadow-[0_0_12px_rgba(168,85,247,0.15)]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-700 via-fuchsia-500 to-pink-400 p-0.5 shadow-neo-purple"><div className="w-full h-full bg-[#120a21] rounded-[10px] flex items-center justify-center"><span className="font-orbitron font-extrabold text-fuchsia-300 text-sm">R</span></div></div>
-            <div className="overflow-hidden"><div className="flex items-center gap-1.5"><h3 className="font-orbitron font-bold text-xs text-purple-100 truncate tracking-wide">RINJANI SYSTEM</h3><span className="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse" /></div><p className="text-[10px] font-mono text-purple-300/70 truncate uppercase">Security Active</p></div>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-700 via-fuchsia-500 to-pink-400 p-0.5 shadow-neo-purple"><div className="w-full h-full bg-[#120a21] rounded-[10px] flex items-center justify-center"><span className="font-orbitron font-extrabold text-fuchsia-300 text-xs">MDG</span></div></div>
+            <div className="overflow-hidden"><div className="flex items-center gap-1.5"><h3 className="font-orbitron font-bold text-xs text-purple-100 truncate tracking-wide">MONEY DENDA GIANA</h3><span className="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse" /></div><p className="text-[10px] font-mono text-purple-300/70 truncate uppercase">Security Active</p></div>
           </div>
           <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between text-[10px] font-orbitron text-purple-300/70"><span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-emerald-400" /> SYSTEM ONLINE</span><span className="bg-purple-500/20 text-fuchsia-300 border border-purple-500/40 px-1.5 py-0.5 rounded font-mono text-[9px]">v2.5 NEON</span></div>
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5 pt-1">
-          <button onClick={onOpenRateModal} className="bg-[#140b24] border border-purple-500/30 rounded-lg p-1.5 text-center flex flex-col items-center justify-center hover:border-purple-400/60 transition-all cursor-pointer group"><Activity className="w-3.5 h-3.5 text-fuchsia-400 mb-0.5 group-hover:scale-110" /><span className="text-[8px] font-orbitron text-purple-200 uppercase font-bold">RATE</span></button>
-          <button onClick={onOpenCryptoModal} className="bg-[#140b24] border border-purple-500/30 rounded-lg p-1.5 text-center flex flex-col items-center justify-center hover:border-purple-400/60 transition-all cursor-pointer group"><Coins className="w-3.5 h-3.5 text-purple-400 mb-0.5 group-hover:scale-110" /><span className="text-[8px] font-orbitron text-purple-200 uppercase font-bold">CRYPTO</span></button>
-          <button onClick={onOpenGoldModal} className="bg-[#140b24] border border-purple-500/30 rounded-lg p-1.5 text-center flex flex-col items-center justify-center hover:border-purple-400/60 transition-all cursor-pointer group"><Award className="w-3.5 h-3.5 text-pink-400 mb-0.5 group-hover:scale-110" /><span className="text-[8px] font-orbitron text-purple-200 uppercase font-bold">GOLD</span></button>
+        <div className="grid grid-cols-4 gap-1 pt-1">
+          <button 
+            onClick={onOpenRateModal} 
+            className="bg-[#140b24] border border-purple-500/30 hover:border-fuchsia-400/60 rounded-lg p-1.5 text-center flex flex-col items-center justify-center transition-all cursor-pointer group"
+            title="Kurs Mata Uang Dunia vs IDR"
+          >
+            <Activity className="w-3.5 h-3.5 text-fuchsia-400 mb-0.5 group-hover:scale-110" />
+            <span className="text-[8px] font-orbitron text-purple-200 uppercase font-bold">RATE</span>
+          </button>
+
+          <button 
+            onClick={onOpenCryptoModal} 
+            className="bg-[#140b24] border border-purple-500/30 hover:border-purple-400/60 rounded-lg p-1.5 text-center flex flex-col items-center justify-center transition-all cursor-pointer group"
+            title="Harga Crypto Live"
+          >
+            <Coins className="w-3.5 h-3.5 text-purple-400 mb-0.5 group-hover:scale-110" />
+            <span className="text-[8px] font-orbitron text-purple-200 uppercase font-bold">CRYPTO</span>
+          </button>
+
+          <button 
+            onClick={onOpenGoldModal} 
+            className="bg-[#140b24] border border-purple-500/30 hover:border-pink-400/60 rounded-lg p-1.5 text-center flex flex-col items-center justify-center transition-all cursor-pointer group"
+            title="Harga Emas Antam Live"
+          >
+            <Award className="w-3.5 h-3.5 text-pink-400 mb-0.5 group-hover:scale-110" />
+            <span className="text-[8px] font-orbitron text-purple-200 uppercase font-bold">GOLD</span>
+          </button>
+
+          <button 
+            onClick={onOpenSCModal} 
+            className="bg-gradient-to-b from-[#1c0e35] to-[#120724] border border-emerald-500/40 hover:border-emerald-400 rounded-lg p-1.5 text-center flex flex-col items-center justify-center transition-all cursor-pointer group shadow-[0_0_10px_rgba(16,185,129,0.2)] hover:shadow-[0_0_14px_rgba(16,185,129,0.4)]"
+            title="SC - Smart Split Calculator (Rumus Financial Freedom & Pembagian Uang)"
+          >
+            <Percent className="w-3.5 h-3.5 text-emerald-400 mb-0.5 group-hover:scale-110" />
+            <span className="text-[8px] font-orbitron text-emerald-300 uppercase font-black tracking-wider">SC</span>
+          </button>
         </div>
 
         <div className="px-1 pt-2"><p className="text-[10px] font-orbitron font-bold uppercase tracking-widest text-purple-300/70">MAIN ACCESS MENU</p></div>
