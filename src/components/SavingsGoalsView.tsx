@@ -34,7 +34,7 @@ import {
   Layers
 } from 'lucide-react';
 import { SavingsGoal, SavingsCategory, SavingsDeposit, AccountType } from '../types';
-import { formatRupiah, formatDateIndo } from '../utils/formatters';
+import { formatRupiah, formatDateIndo, formatThousands, parseThousands } from '../utils/formatters';
 
 interface SavingsGoalsViewProps {
   savingsGoals: SavingsGoal[];
@@ -666,11 +666,15 @@ export const SavingsGoalsView: React.FC<SavingsGoalsViewProps> = ({
                   </label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     required
                     placeholder="Contoh: 50.000.000"
-                    value={goalTargetAmount}
-                    onChange={(e) => setGoalTargetAmount(e.target.value)}
-                    className="w-full bg-[#1b0f33] border border-purple-500/30 rounded-xl px-4 py-2.5 text-sm font-mono text-emerald-400 focus:outline-none focus:border-emerald-400"
+                    value={goalTargetAmount ? (isNaN(parseThousands(goalTargetAmount)) ? goalTargetAmount : (parseThousands(goalTargetAmount) > 0 ? formatThousands(parseThousands(goalTargetAmount)) : '')) : ''}
+                    onChange={(e) => {
+                      const val = parseThousands(e.target.value);
+                      setGoalTargetAmount(val > 0 ? formatThousands(val) : '');
+                    }}
+                    className="w-full bg-[#1b0f33] border border-purple-500/30 rounded-xl px-4 py-2.5 text-sm font-mono text-emerald-400 focus:outline-none focus:border-emerald-400 font-bold"
                   />
                 </div>
               </div>
@@ -682,10 +686,14 @@ export const SavingsGoalsView: React.FC<SavingsGoalsViewProps> = ({
                   </label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     placeholder="Nominal awal yang sudah ada (Rp)"
-                    value={goalInitialAmount}
-                    onChange={(e) => setGoalInitialAmount(e.target.value)}
-                    className="w-full bg-[#1b0f33] border border-purple-500/30 rounded-xl px-4 py-2.5 text-sm font-mono text-purple-200 focus:outline-none focus:border-emerald-400"
+                    value={goalInitialAmount ? (isNaN(parseThousands(goalInitialAmount)) ? goalInitialAmount : (parseThousands(goalInitialAmount) > 0 ? formatThousands(parseThousands(goalInitialAmount)) : '')) : ''}
+                    onChange={(e) => {
+                      const val = parseThousands(e.target.value);
+                      setGoalInitialAmount(val > 0 ? formatThousands(val) : '');
+                    }}
+                    className="w-full bg-[#1b0f33] border border-purple-500/30 rounded-xl px-4 py-2.5 text-sm font-mono text-purple-200 focus:outline-none focus:border-emerald-400 font-bold"
                   />
                 </div>
               )}
@@ -791,10 +799,14 @@ export const SavingsGoalsView: React.FC<SavingsGoalsViewProps> = ({
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   required
                   placeholder="Contoh: 1.000.000"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
+                  value={depositAmount ? (isNaN(parseThousands(depositAmount)) ? depositAmount : (parseThousands(depositAmount) > 0 ? formatThousands(parseThousands(depositAmount)) : '')) : ''}
+                  onChange={(e) => {
+                    const val = parseThousands(e.target.value);
+                    setDepositAmount(val > 0 ? formatThousands(val) : '');
+                  }}
                   className="w-full bg-[#1b0f33] border border-emerald-500/40 rounded-xl px-4 py-3 text-lg font-mono font-bold text-emerald-400 focus:outline-none focus:border-emerald-400"
                 />
 
