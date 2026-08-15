@@ -1,6 +1,6 @@
 {
-  "name": "RINJANI FINTECH - Real-Time Dashboard Keuangan & AI",
-  "description": "Aplikasi manajemen keuangan pribadi lengkap dengan Dashboard Real-time RINJANI, Jurnal Kas, Laporan Bulanan, Saham & Investasi, Hutang Piutang, Gaji & Bonus, serta Asisten AI Gemini.",
+  "name": "MONEY DENDA GIANA",
+  "description": "Aplikasi manajemen keuangan pribadi lengkap dengan Dashboard Real-time MONEY DENDA GIANA, Jurnal Kas, Laporan Bulanan, Saham & Investasi, Hutang Piutang, Gaji & Bonus, serta Asisten AI Gemini.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
