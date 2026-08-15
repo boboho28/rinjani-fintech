@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, PlusCircle, Save } from 'lucide-react';
 import { Transaction, TransactionType, AccountType } from '../types';
+import { formatRupiah, formatThousands, parseThousands } from '../utils/formatters';
 
 interface AddTransactionModalProps {
   isOpen: boolean;
@@ -142,13 +143,21 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           </div>
 
           <div>
-            <label className="text-xs font-orbitron font-bold text-purple-300/90 block mb-1">Nominal (Rp)</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-orbitron font-bold text-purple-300/90">Nominal (Rp) *</label>
+              {amount > 0 && (
+                <span className="text-[11px] font-mono font-bold text-fuchsia-400">
+                  {formatRupiah(amount)}
+                </span>
+              )}
+            </div>
             <input
-              type="number"
-              placeholder="0"
-              value={amount || ''}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full bg-[#1a0f30] border border-purple-500/30 text-purple-300 placeholder-purple-200/30 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 font-mono font-bold"
+              type="text"
+              inputMode="numeric"
+              placeholder="Contoh: 2.000.000"
+              value={amount > 0 ? formatThousands(amount) : ''}
+              onChange={(e) => setAmount(parseThousands(e.target.value))}
+              className="w-full bg-[#1a0f30] border border-purple-500/30 text-purple-300 placeholder-purple-200/30 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 font-mono font-bold tracking-wide"
               required
             />
           </div>
