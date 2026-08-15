@@ -23,17 +23,29 @@ export interface Transaction {
 
 export type AssetType = 'Saham' | 'Reksadana' | 'Emas' | 'Crypto' | 'Obligasi / SBN';
 
+export interface InvestmentPurchase {
+  id: string;
+  date: string; // YYYY-MM-DD
+  buyPrice: number; // Harga beli per unit / lembar / gram
+  shares: number; // Jumlah lembar / unit / gram
+  totalCost: number; // buyPrice * shares
+  platform: string; // e.g. "Indodax", "Ajaib", "Bibit"
+  account?: AccountType; // Rekening sumber kas yang dipotong
+  notes?: string;
+}
+
 export interface Investment {
   id: string;
   name: string;
   symbol: string;
   assetType: AssetType;
-  buyPrice: number;
+  buyPrice: number; // Average Buy Price (Harga Rata-Rata)
   currentPrice: number;
-  shares: number; // lembar or unit
+  shares: number; // Total Akumulasi Lembar / Unit
   buyDate: string;
   platform: string;
-  notes: string;
+  notes?: string;
+  purchases?: InvestmentPurchase[]; // Riwayat seluruh pembelian di box aset ini
 }
 
 export type DebtType = 'hutang' | 'piutang'; // hutang: kita pinjam, piutang: orang pinjam ke kita
