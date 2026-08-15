@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Transaction, 
   Investment, 
+  InvestmentPurchase,
   DebtItem, 
   SalaryBonus, 
   BudgetCategory, 
@@ -20,7 +21,15 @@ import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 import { 
   DEFAULT_MARQUEE_SETTINGS,
-  exportBackupJSON 
+  exportBackupJSON,
+  loadStoredData,
+  saveTransactions,
+  saveInvestments,
+  saveDebts,
+  saveSalaries,
+  saveTradings,
+  saveSavingsGoals,
+  saveMarqueeSettings
 } from './utils/storage';
 
 import { HeaderNavbar } from './components/HeaderNavbar';
@@ -45,6 +54,7 @@ import { AIAssistantModal } from './components/AIAssistantModal';
 import { CurrencyRateModal } from './components/CurrencyRateModal';
 import { CryptoMarketModal } from './components/CryptoMarketModal';
 import { GoldMarketModal } from './components/GoldMarketModal';
+import { SmartCalculatorModal } from './components/SmartCalculatorModal';
 import { TickerSettingsModal } from './components/TickerSettingsModal';
 import { RefreshCw, Menu, X } from 'lucide-react';
 
@@ -54,21 +64,23 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Core App State
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [debts, setDebts] = useState<DebtItem[]>([]);
-  const [salaries, setSalaries] = useState<SalaryBonus[]>([]);
-  const [budgets, setBudgets] = useState<BudgetCategory[]>([]);
-  const [tradings, setTradings] = useState<TradingJournalItem[]>([]);
-  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
-  const [marqueeSettings, setMarqueeSettings] = useState<MarqueeSettings>(DEFAULT_MARQUEE_SETTINGS);
+  // Core App State (initialized with local stored fallback)
+  const initialData = loadStoredData();
+  const [transactions, setTransactions] = useState<Transaction[]>(initialData.transactions);
+  const [investments, setInvestments] = useState<Investment[]>(initialData.investments);
+  const [debts, setDebts] = useState<DebtItem[]>(initialData.debts);
+  const [salaries, setSalaries] = useState<SalaryBonus[]>(initialData.salaries);
+  const [budgets, setBudgets] = useState<BudgetCategory[]>(initialData.budgets);
+  const [tradings, setTradings] = useState<TradingJournalItem[]>(initialData.tradings);
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(initialData.savingsGoals);
+  const [marqueeSettings, setMarqueeSettings] = useState<MarqueeSettings>(initialData.marquee || DEFAULT_MARQUEE_SETTINGS);
 
   // Modals visibility
   const [isAddTxModalOpen, setIsAddTxModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [isAddInvModalOpen, setIsAddInvModalOpen] = useState(false);
   const [editingInv, setEditingInv] = useState<Investment | null>(null);
+  const [preSelectedInvSymbol, setPreSelectedInvSymbol] = useState<string>('');
   const [isAddDebtModalOpen, setIsAddDebtModalOpen] = useState(false);
   const [editingDebt, setEditingDebt] = useState<DebtItem | null>(null);
   const [isAddSalaryModalOpen, setIsAddSalaryModalOpen] = useState(false);
@@ -79,6 +91,7 @@ export default function App() {
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
   const [isCryptoModalOpen, setIsCryptoModalOpen] = useState(false);
   const [isGoldModalOpen, setIsGoldModalOpen] = useState(false);
+  const [isSCModalOpen, setIsSCModalOpen] = useState(false);
   const [isTickerModalOpen, setIsTickerModalOpen] = useState(false);
 
   // 1. Firebase Auth Listener
@@ -94,19 +107,38 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     const docRef = doc(db, 'users', user.uid, 'settings', 'appData');
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setTransactions(data.transactions || []);
-        setInvestments(data.investments || []);
-        setDebts(data.debts || []);
-        setSalaries(data.salaries || []);
-        setBudgets(data.budgets || []);
-        setTradings(data.tradings || []);
-        setSavingsGoals(data.savingsGoals || []);
-        setMarqueeSettings(data.marquee || DEFAULT_MARQUEE_SETTINGS);
+    const unsubscribe = onSnapshot(
+      docRef, 
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.transactions) { setTransactions(data.transactions); saveTransactions(data.transactions); }
+          if (data.investments) { setInvestments(data.investments); saveInvestments(data.investments); }
+          if (data.debts) { setDebts(data.debts); saveDebts(data.debts); }
+          if (data.salaries) { setSalaries(data.salaries); saveSalaries(data.salaries); }
+          if (data.budgets) { setBudgets(data.budgets); }
+          if (data.tradings) { setTradings(data.tradings); saveTradings(data.tradings); }
+          if (data.savingsGoals) { setSavingsGoals(data.savingsGoals); saveSavingsGoals(data.savingsGoals); }
+          if (data.marquee) { setMarqueeSettings(data.marquee); saveMarqueeSettings(data.marquee); }
+        } else {
+          // Seed cloud database for new user
+          const defaultData = loadStoredData();
+          setDoc(docRef, {
+            transactions: defaultData.transactions,
+            investments: defaultData.investments,
+            debts: defaultData.debts,
+            salaries: defaultData.salaries,
+            budgets: defaultData.budgets,
+            tradings: defaultData.tradings,
+            savingsGoals: defaultData.savingsGoals,
+            marquee: defaultData.marquee
+          }, { merge: true }).catch((e) => console.warn("Auto-seed warn:", e));
+        }
+      },
+      (error) => {
+        console.warn("Firestore snapshot listener warning (using local fallback):", error);
       }
-    });
+    );
     return () => unsubscribe();
   }, [user]);
 
@@ -117,7 +149,7 @@ export default function App() {
     try {
       await setDoc(docRef, updates, { merge: true });
     } catch (err) {
-      console.error("Cloud Sync Error:", err);
+      console.warn("Cloud Sync Note (persisting locally):", err);
     }
   };
 
@@ -125,18 +157,47 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setTransactions([]); setInvestments([]); setDebts([]); setSalaries([]); setTradings([]); setSavingsGoals([]);
-    } catch (err) { console.error("Logout Error:", err); }
+    } catch (err) { 
+      console.error("Logout Error:", err); 
+    }
   };
 
   // State Updates
-  const updateTransactions = (newList: Transaction[]) => { setTransactions(newList); syncToCloud({ transactions: newList }); };
-  const updateInvestments = (newList: Investment[]) => { setInvestments(newList); syncToCloud({ investments: newList }); };
-  const updateDebts = (newList: DebtItem[]) => { setDebts(newList); syncToCloud({ debts: newList }); };
-  const updateSalaries = (newList: SalaryBonus[]) => { setSalaries(newList); syncToCloud({ salaries: newList }); };
-  const updateTradings = (newList: TradingJournalItem[]) => { setTradings(newList); syncToCloud({ tradings: newList }); };
-  const updateSavingsGoals = (newList: SavingsGoal[]) => { setSavingsGoals(newList); syncToCloud({ savingsGoals: newList }); };
-  const handleSaveMarqueeSettings = (newSettings: MarqueeSettings) => { setMarqueeSettings(newSettings); syncToCloud({ marquee: newSettings }); };
+  const updateTransactions = (newList: Transaction[]) => { 
+    setTransactions(newList); 
+    saveTransactions(newList);
+    syncToCloud({ transactions: newList }); 
+  };
+  const updateInvestments = (newList: Investment[]) => { 
+    setInvestments(newList); 
+    saveInvestments(newList);
+    syncToCloud({ investments: newList }); 
+  };
+  const updateDebts = (newList: DebtItem[]) => { 
+    setDebts(newList); 
+    saveDebts(newList);
+    syncToCloud({ debts: newList }); 
+  };
+  const updateSalaries = (newList: SalaryBonus[]) => { 
+    setSalaries(newList); 
+    saveSalaries(newList);
+    syncToCloud({ salaries: newList }); 
+  };
+  const updateTradings = (newList: TradingJournalItem[]) => { 
+    setTradings(newList); 
+    saveTradings(newList);
+    syncToCloud({ tradings: newList }); 
+  };
+  const updateSavingsGoals = (newList: SavingsGoal[]) => { 
+    setSavingsGoals(newList); 
+    saveSavingsGoals(newList);
+    syncToCloud({ savingsGoals: newList }); 
+  };
+  const handleSaveMarqueeSettings = (newSettings: MarqueeSettings) => { 
+    setMarqueeSettings(newSettings); 
+    saveMarqueeSettings(newSettings);
+    syncToCloud({ marquee: newSettings }); 
+  };
 
   // Logic Handlers
   const handleSaveTransaction = (txData: Omit<Transaction, 'id'>, editId?: string) => {
@@ -146,12 +207,182 @@ export default function App() {
   };
   const handleDeleteTransaction = (id: string) => { if (window.confirm('Hapus transaksi?')) updateTransactions(transactions.filter((t) => t.id !== id)); };
 
-  const handleSaveInvestment = (invData: Omit<Investment, 'id'>, editId?: string) => {
-    if (editId) updateInvestments(investments.map((inv) => (inv.id === editId ? { ...invData, id: editId } : inv)));
-    else updateInvestments([...investments, { ...invData, id: `inv-${Date.now()}` }]);
+  const handleSaveInvestment = (
+    invData: Omit<Investment, 'id'>, 
+    options?: { 
+      editId?: string; 
+      deductFromAccount?: AccountType; 
+      deductAmount?: number; 
+      isNewPurchaseOnExisting?: boolean; 
+    }
+  ) => {
+    const editId = options?.editId;
+
+    if (editId) {
+      // Direct update of existing item
+      const existing = investments.find((inv) => inv.id === editId);
+      updateInvestments(
+        investments.map((inv) =>
+          inv.id === editId
+            ? {
+                ...invData,
+                id: editId,
+                purchases: existing?.purchases || []
+              }
+            : inv
+        )
+      );
+    } else {
+      // Check if this asset symbol already exists
+      const cleanSymbol = invData.symbol.trim().toUpperCase();
+      const existing = investments.find((i) => i.symbol.trim().toUpperCase() === cleanSymbol);
+
+      if (existing) {
+        const oldTotalCost = existing.buyPrice * existing.shares;
+        const newPurchaseCost = invData.buyPrice * invData.shares;
+        const newTotalShares = existing.shares + invData.shares;
+        const newAvgBuyPrice = newTotalShares > 0 ? (oldTotalCost + newPurchaseCost) / newTotalShares : invData.buyPrice;
+
+        const newPurchaseEntry: InvestmentPurchase = {
+          id: `p-${Date.now()}`,
+          date: invData.buyDate || new Date().toISOString().slice(0, 10),
+          buyPrice: invData.buyPrice,
+          shares: invData.shares,
+          totalCost: newPurchaseCost,
+          platform: invData.platform || existing.platform,
+          account: options?.deductFromAccount,
+          notes: invData.notes
+        };
+
+        const existingPurchases = existing.purchases && existing.purchases.length > 0
+          ? existing.purchases
+          : [
+              {
+                id: `init-${existing.id}`,
+                date: existing.buyDate || '2026-08-01',
+                buyPrice: existing.buyPrice,
+                shares: existing.shares,
+                totalCost: oldTotalCost,
+                platform: existing.platform,
+                notes: existing.notes
+              }
+            ];
+
+        const updatedInv: Investment = {
+          ...existing,
+          name: invData.name || existing.name,
+          assetType: invData.assetType || existing.assetType,
+          platform: invData.platform || existing.platform,
+          shares: newTotalShares,
+          buyPrice: newAvgBuyPrice,
+          currentPrice: invData.currentPrice || existing.currentPrice,
+          notes: invData.notes || existing.notes,
+          purchases: [newPurchaseEntry, ...existingPurchases]
+        };
+
+        updateInvestments(investments.map((i) => i.id === existing.id ? updatedInv : i));
+      } else {
+        // Brand new asset
+        const newId = `inv-${Date.now()}`;
+        const newPurchaseCost = invData.buyPrice * invData.shares;
+        const initialPurchase: InvestmentPurchase = {
+          id: `p-${Date.now()}`,
+          date: invData.buyDate || new Date().toISOString().slice(0, 10),
+          buyPrice: invData.buyPrice,
+          shares: invData.shares,
+          totalCost: newPurchaseCost,
+          platform: invData.platform,
+          account: options?.deductFromAccount,
+          notes: invData.notes
+        };
+
+        const newInv: Investment = {
+          ...invData,
+          id: newId,
+          purchases: [initialPurchase]
+        };
+
+        updateInvestments([...investments, newInv]);
+      }
+    }
+
+    // Auto-create cash expense transaction if requested
+    if (options?.deductFromAccount && options.deductAmount && options.deductAmount > 0) {
+      const unitLabel = invData.assetType === 'Saham' ? 'Lembar' : invData.assetType === 'Emas' ? 'Gram' : 'Unit';
+      const newTx: Transaction = {
+        id: `tx-inv-${Date.now()}`,
+        date: invData.buyDate || new Date().toISOString().slice(0, 10),
+        description: `Beli Aset: ${invData.symbol.toUpperCase()} (${invData.shares.toLocaleString('id-ID')} ${unitLabel})`,
+        amount: options.deductAmount,
+        type: 'expense',
+        category: 'Investasi',
+        account: options.deductFromAccount,
+        note: `Platform: ${invData.platform || ''}${invData.notes ? ` - ${invData.notes}` : ''}`
+      };
+      updateTransactions([newTx, ...transactions]);
+    }
+
     setEditingInv(null);
+    setPreSelectedInvSymbol('');
   };
   const handleDeleteInvestment = (id: string) => { if (window.confirm('Hapus investasi?')) updateInvestments(investments.filter((inv) => inv.id !== id)); };
+
+  const handleSellInvestment = (
+    investmentId: string,
+    sellData: {
+      sharesToSell: number;
+      sellPrice: number;
+      destinationAccount?: AccountType;
+      depositToJournal: boolean;
+      sellDate: string;
+      notes?: string;
+    }
+  ) => {
+    const inv = investments.find((i) => i.id === investmentId);
+    if (!inv) return;
+
+    const sharesToSell = Math.min(sellData.sharesToSell, inv.shares);
+    const remainingShares = inv.shares - sharesToSell;
+    const totalProceeds = sharesToSell * sellData.sellPrice;
+    const modalTerjual = sharesToSell * inv.buyPrice;
+    const realizedPnL = totalProceeds - modalTerjual;
+
+    // 1. Update investments
+    if (remainingShares <= 0) {
+      // Sold all shares: remove from active holdings
+      updateInvestments(investments.filter((i) => i.id !== investmentId));
+    } else {
+      // Partial sell: reduce shares, keep same average buy price
+      updateInvestments(
+        investments.map((i) =>
+          i.id === investmentId
+            ? {
+                ...i,
+                shares: remainingShares,
+                currentPrice: sellData.sellPrice,
+              }
+            : i
+        )
+      );
+    }
+
+    // 2. Add income transaction to journal if depositToJournal is true
+    if (sellData.depositToJournal && sellData.destinationAccount && totalProceeds > 0) {
+      const unitLabel = inv.assetType === 'Saham' ? 'Lembar' : inv.assetType === 'Emas' ? 'Gram' : 'Unit';
+      const pnlSign = realizedPnL >= 0 ? '+' : '-';
+      const newTx: Transaction = {
+        id: `tx-sell-${Date.now()}`,
+        date: sellData.sellDate || new Date().toISOString().slice(0, 10),
+        description: `Jual Aset: ${inv.symbol.toUpperCase()} (${sharesToSell.toLocaleString('id-ID')} ${unitLabel})`,
+        amount: totalProceeds,
+        type: 'income',
+        category: 'Investasi',
+        account: sellData.destinationAccount,
+        note: `Penjualan ${inv.name || inv.symbol} @ Rp ${sellData.sellPrice.toLocaleString('id-ID')} (Modal: Rp ${modalTerjual.toLocaleString('id-ID')}, Realized PnL: ${pnlSign}Rp ${Math.abs(realizedPnL).toLocaleString('id-ID')})${sellData.notes ? ` - ${sellData.notes}` : ''}`
+      };
+      updateTransactions([newTx, ...transactions]);
+    }
+  };
 
   const handleSaveDebt = (debtData: Omit<DebtItem, 'id' | 'payments'>, editId?: string) => {
     if (editId) updateDebts(debts.map((d) => d.id === editId ? { ...debtData, id: editId, payments: d.payments } : d));
@@ -293,7 +524,10 @@ export default function App() {
               activeTab={activeTab} 
               setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }} 
               onOpenAIModal={() => setIsAIModalOpen(true)}
-              onOpenRateModal={() => setIsRateModalOpen(true)} onOpenCryptoModal={() => setIsCryptoModalOpen(true)} onOpenGoldModal={() => setIsGoldModalOpen(true)}
+              onOpenRateModal={() => setIsRateModalOpen(true)} 
+              onOpenCryptoModal={() => setIsCryptoModalOpen(true)} 
+              onOpenGoldModal={() => setIsGoldModalOpen(true)}
+              onOpenSCModal={() => setIsSCModalOpen(true)}
               onLogout={handleLogout}
               debtCount={debts.filter(d => d.status !== 'lunas').length} pendingBonusCount={salaries.filter(s => !s.isClaimedToJournal).length}
               unclaimedTradingCount={tradings.filter(t => t.type === 'profit' && !t.isClaimedToJournal).length} activeGoalsCount={savingsGoals.filter(g => !g.isCompleted).length}
@@ -313,7 +547,23 @@ export default function App() {
            {activeTab === 'dashboard' && <DashboardView transactions={transactions} investments={investments} debts={debts} totalBalance={totalBalance} netWorth={netWorth} onOpenAddModal={() => setIsAddTxModalOpen(true)} onOpenAIModal={() => setIsAIModalOpen(true)} onNavigateToTab={setActiveTab} />}
            {activeTab === 'jurnal' && <JournalView transactions={transactions} onAddTransaction={() => setIsAddTxModalOpen(true)} onEditTransaction={(tx) => { setEditingTx(tx); setIsAddTxModalOpen(true); }} onDeleteTransaction={handleDeleteTransaction} onOpenAIModal={() => setIsAIModalOpen(true)} />}
            {activeTab === 'laporan' && <MonthlyReportView transactions={transactions} budgets={budgets} onOpenAIModal={() => setIsAIModalOpen(true)} />}
-           {activeTab === 'investasi' && <InvestmentsView investments={investments} onAddInvestment={() => setIsAddInvModalOpen(true)} onEditInvestment={(inv) => { setEditingInv(inv); setIsAddInvModalOpen(true); }} onDeleteInvestment={handleDeleteInvestment} onOpenAIModal={() => setIsAIModalOpen(true)} />}
+           {activeTab === 'investasi' && (
+             <InvestmentsView 
+               investments={investments} 
+               onAddInvestment={(sym) => {
+                 setEditingInv(null);
+                 setPreSelectedInvSymbol(sym || '');
+                 setIsAddInvModalOpen(true);
+               }} 
+               onEditInvestment={(inv) => { 
+                 setEditingInv(inv); 
+                 setIsAddInvModalOpen(true); 
+               }} 
+               onDeleteInvestment={handleDeleteInvestment} 
+               onSellInvestment={handleSellInvestment}
+               onOpenAIModal={() => setIsAIModalOpen(true)} 
+             />
+           )}
            {activeTab === 'hutang_piutang' && <DebtView debts={debts} onAddDebt={() => setIsAddDebtModalOpen(true)} onEditDebt={(d) => { setEditingDebt(d); setIsAddDebtModalOpen(true); }} onDeleteDebt={handleDeleteDebt} onPayDebt={handlePayDebt} onOpenAIModal={() => setIsAIModalOpen(true)} />}
            {activeTab === 'gaji_bonus' && <SalaryBonusView salaries={salaries} onAddSalary={() => setIsAddSalaryModalOpen(true)} onEditSalary={(s) => { setEditingSalary(s); setIsAddSalaryModalOpen(true); }} onDeleteSalary={handleDeleteSalary} onClaimToJournal={handleClaimSalaryToJournal} onOpenAIModal={() => setIsAIModalOpen(true)} />}
            {activeTab === 'trading' && <TradingJournalView tradings={tradings} onOpenAddModal={() => setIsAddTradingModalOpen(true)} onEditTrading={(trd) => { setEditingTrading(trd); setIsAddTradingModalOpen(true); }} onDeleteTrading={handleDeleteTrading} onClaimToJournal={handleClaimTradingToJournal} onBatchClaimToJournal={handleBatchClaimTradingToJournal} />}
@@ -323,7 +573,18 @@ export default function App() {
 
       {/* Modals */}
       <AddTransactionModal isOpen={isAddTxModalOpen} onClose={() => { setIsAddTxModalOpen(false); setEditingTx(null); }} onSave={handleSaveTransaction} editingTransaction={editingTx} />
-      <AddInvestmentModal isOpen={isAddInvModalOpen} onClose={() => { setIsAddInvModalOpen(false); setEditingInv(null); }} onSave={handleSaveInvestment} editingInvestment={editingInv} />
+      <AddInvestmentModal 
+        isOpen={isAddInvModalOpen} 
+        onClose={() => { 
+          setIsAddInvModalOpen(false); 
+          setEditingInv(null); 
+          setPreSelectedInvSymbol('');
+        }} 
+        onSave={handleSaveInvestment} 
+        editingInvestment={editingInv}
+        existingInvestments={investments}
+        preSelectedSymbol={preSelectedInvSymbol}
+      />
       <AddDebtModal isOpen={isAddDebtModalOpen} onClose={() => { setIsAddDebtModalOpen(false); setEditingDebt(null); }} onSave={handleSaveDebt} editingDebt={editingDebt} />
       <AddSalaryModal isOpen={isAddSalaryModalOpen} onClose={() => { setIsAddSalaryModalOpen(false); setEditingSalary(null); }} onSave={handleSaveSalary} editingSalary={editingSalary} />
       <AddTradingModal isOpen={isAddTradingModalOpen} onClose={() => { setIsAddTradingModalOpen(false); setEditingTrading(null); }} onSave={handleSaveTrading} editingTrading={editingTrading} />
@@ -331,6 +592,7 @@ export default function App() {
       <CurrencyRateModal isOpen={isRateModalOpen} onClose={() => setIsRateModalOpen(false)} />
       <CryptoMarketModal isOpen={isCryptoModalOpen} onClose={() => setIsCryptoModalOpen(false)} />
       <GoldMarketModal isOpen={isGoldModalOpen} onClose={() => setIsGoldModalOpen(false)} />
+      <SmartCalculatorModal isOpen={isSCModalOpen} onClose={() => setIsSCModalOpen(false)} currentBalance={totalBalance} />
       <TickerSettingsModal isOpen={isTickerModalOpen} onClose={() => setIsTickerModalOpen(false)} settings={marqueeSettings} onSaveSettings={handleSaveMarqueeSettings} />
     </div>
   );
