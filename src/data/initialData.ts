@@ -115,6 +115,28 @@ export const initialInvestments: Investment[] = [
     buyDate: '2026-03-15',
     platform: 'Ajaib Sekuritas',
     notes: 'Saham perbankan fundamental paling kuat di Indonesia, dividen stabil 3% per tahun. Alokasi jangka panjang (5+ tahun).',
+    purchases: [
+      {
+        id: 'p-bbca-1',
+        date: '2026-03-15',
+        buyPrice: 9500,
+        shares: 1000,
+        totalCost: 9500000,
+        platform: 'Ajaib Sekuritas',
+        account: 'Bank BCA',
+        notes: 'Cicil awal 10 lot'
+      },
+      {
+        id: 'p-bbca-2',
+        date: '2026-05-20',
+        buyPrice: 10000,
+        shares: 1500,
+        totalCost: 15000000,
+        platform: 'Ajaib Sekuritas',
+        account: 'Rekening Investasi',
+        notes: 'Average up 15 lot saat koreksi'
+      }
+    ]
   },
   {
     id: 'inv-2',
@@ -127,6 +149,18 @@ export const initialInvestments: Investment[] = [
     buyDate: '2026-05-10',
     platform: 'Stockbit Sekuritas',
     notes: 'Infrastruktur telekomunikasi nasional. Valuasi murah saat ini, menunggu pemulihan sektor data seluler.',
+    purchases: [
+      {
+        id: 'p-tlkm-1',
+        date: '2026-05-10',
+        buyPrice: 3850,
+        shares: 4000,
+        totalCost: 15400000,
+        platform: 'Stockbit Sekuritas',
+        account: 'Bank Mandiri',
+        notes: 'Beli 40 lot TLKM'
+      }
+    ]
   },
   {
     id: 'inv-3',
@@ -139,6 +173,18 @@ export const initialInvestments: Investment[] = [
     buyDate: '2025-11-20',
     platform: 'Pegadaian Digital',
     notes: 'Hedging inflasi & dana darurat fisik aman.',
+    purchases: [
+      {
+        id: 'p-antam-1',
+        date: '2025-11-20',
+        buyPrice: 1280000,
+        shares: 10,
+        totalCost: 12800000,
+        platform: 'Pegadaian Digital',
+        account: 'Bank BRI',
+        notes: 'Beli emas batangan 10 gram'
+      }
+    ]
   },
   {
     id: 'inv-4',
@@ -151,6 +197,62 @@ export const initialInvestments: Investment[] = [
     buyDate: '2026-01-05',
     platform: 'Bibit Reksadana',
     notes: 'Reksadana pasar uang untuk parkir dana darurat dengan return ~5.8% p.a cair cepat.',
+    purchases: [
+      {
+        id: 'p-smmf-1',
+        date: '2026-01-05',
+        buyPrice: 1000,
+        shares: 150000,
+        totalCost: 150000000,
+        platform: 'Bibit Reksadana',
+        account: 'SeaBank',
+        notes: 'Alokasi dana darurat'
+      }
+    ]
+  },
+  {
+    id: 'inv-5',
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    assetType: 'Crypto',
+    buyPrice: 1060196484,
+    currentPrice: 1120292968,
+    shares: 0.0035,
+    buyDate: '2026-08-14',
+    platform: 'Indodax',
+    notes: 'Akumulasi DCA Bitcoin',
+    purchases: [
+      {
+        id: 'p-btc-1',
+        date: '2026-08-14',
+        buyPrice: 1120292968,
+        shares: 0.001785,
+        totalCost: 2000000,
+        platform: 'Indodax',
+        account: 'Bank BCA',
+        notes: 'DCA BTC via Indodax'
+      },
+      {
+        id: 'p-btc-2',
+        date: '2026-08-14',
+        buyPrice: 1000000000,
+        shares: 0.001,
+        totalCost: 1000000,
+        platform: 'Ajaib Sekuritas',
+        account: 'Rekening Investasi',
+        notes: 'Beli BTC via Ajaib'
+      },
+      {
+        id: 'p-btc-3',
+        date: '2026-08-14',
+        buyPrice: 1000000000,
+        shares: 0.000715,
+        totalCost: 1000000,
+        platform: 'Ajaib Sekuritas',
+        account: 'E-Wallet (GoPay/OVO/DANA)',
+        notes: 'Beli BTC via Ajaib'
+      }
+    ]
   }
 ];
 
