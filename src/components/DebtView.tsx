@@ -17,7 +17,7 @@ import {
   Wallet
 } from 'lucide-react';
 import { DebtItem, DebtType, DebtStatus } from '../types';
-import { formatRupiah, formatDateIndo } from '../utils/formatters';
+import { formatRupiah, formatDateIndo, formatThousands, parseThousands } from '../utils/formatters';
 
 interface DebtViewProps {
   debts: DebtItem[];
@@ -356,12 +356,21 @@ export const DebtView: React.FC<DebtViewProps> = ({
 
             <form onSubmit={handleConfirmPayment} className="space-y-3">
               <div>
-                <label className="text-xs font-orbitron font-bold text-purple-400 block mb-1">Nominal Pembayaran (Rp)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-orbitron font-bold text-purple-400">Nominal Pembayaran (Rp) *</label>
+                  {paymentAmount > 0 && (
+                    <span className="text-[11px] font-mono font-bold text-emerald-400">
+                      {formatRupiah(paymentAmount)}
+                    </span>
+                  )}
+                </div>
                 <input
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                  className="w-full bg-[#1a0f30] border border-purple-500/30 text-purple-100 font-mono rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-400"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Contoh: 500.000"
+                  value={paymentAmount > 0 ? formatThousands(paymentAmount) : ''}
+                  onChange={(e) => setPaymentAmount(parseThousands(e.target.value))}
+                  className="w-full bg-[#1a0f30] border border-purple-500/30 text-purple-100 font-mono font-bold rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-400"
                   required
                 />
               </div>
