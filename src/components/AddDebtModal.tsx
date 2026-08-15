@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Scale } from 'lucide-react';
 import { DebtItem, DebtType, DebtStatus } from '../types';
+import { formatRupiah, formatThousands, parseThousands } from '../utils/formatters';
 
 interface AddDebtModalProps {
   isOpen: boolean;
@@ -142,24 +143,40 @@ export const AddDebtModal: React.FC<AddDebtModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-orbitron font-bold text-purple-300/90 block mb-1">Total Pinjaman (Rp)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-orbitron font-bold text-purple-300/90">Total Pinjaman (Rp) *</label>
+                {totalAmount > 0 && (
+                  <span className="text-[10px] font-mono text-fuchsia-400 font-bold">
+                    {formatRupiah(totalAmount)}
+                  </span>
+                )}
+              </div>
               <input
-                type="number"
-                placeholder="0"
-                value={totalAmount || ''}
-                onChange={(e) => setTotalAmount(Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                placeholder="Contoh: 5.000.000"
+                value={totalAmount > 0 ? formatThousands(totalAmount) : ''}
+                onChange={(e) => setTotalAmount(parseThousands(e.target.value))}
                 className="w-full bg-[#1a0f30] border border-purple-500/30 text-purple-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 font-mono font-bold"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-orbitron font-bold text-purple-300/90 block mb-1">Telah Dibayar (Rp)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-orbitron font-bold text-purple-300/90">Telah Dibayar (Rp)</label>
+                {paidAmount > 0 && (
+                  <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                    {formatRupiah(paidAmount)}
+                  </span>
+                )}
+              </div>
               <input
-                type="number"
-                placeholder="0"
-                value={paidAmount || ''}
-                onChange={(e) => setPaidAmount(Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                placeholder="Contoh: 1.000.000"
+                value={paidAmount > 0 ? formatThousands(paidAmount) : ''}
+                onChange={(e) => setPaidAmount(parseThousands(e.target.value))}
                 className="w-full bg-[#1a0f30] border border-purple-500/30 text-emerald-400 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 font-mono font-bold"
               />
             </div>
