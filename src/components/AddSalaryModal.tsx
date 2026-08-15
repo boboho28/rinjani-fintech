@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Coins } from 'lucide-react';
 import { SalaryBonus, IncomeSourceType } from '../types';
+import { formatThousands, parseThousands } from '../utils/formatters';
 
 interface AddSalaryModalProps {
   isOpen: boolean;
@@ -159,10 +160,11 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
             <div>
               <label className="text-xs font-orbitron font-bold text-purple-300/90 block mb-1">Gaji Pokok (Rp)</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="0"
-                value={baseAmount || ''}
-                onChange={(e) => setBaseAmount(Number(e.target.value))}
+                value={baseAmount > 0 ? formatThousands(baseAmount) : ''}
+                onChange={(e) => setBaseAmount(parseThousands(e.target.value))}
                 className="w-full bg-[#1a0f30] border border-purple-500/30 text-purple-300 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 font-mono font-bold"
               />
             </div>
@@ -170,10 +172,11 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
             <div>
               <label className="text-xs font-orbitron font-bold text-purple-300/90 block mb-1">Bonus/Insentif</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="0"
-                value={bonusAmount || ''}
-                onChange={(e) => setBonusAmount(Number(e.target.value))}
+                value={bonusAmount > 0 ? formatThousands(bonusAmount) : ''}
+                onChange={(e) => setBonusAmount(parseThousands(e.target.value))}
                 className="w-full bg-[#1a0f30] border border-purple-500/30 text-emerald-400 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 font-mono font-bold"
               />
             </div>
@@ -181,10 +184,11 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
             <div>
               <label className="text-xs font-orbitron font-bold text-purple-300/90 block mb-1">Potongan Pajak</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="0"
-                value={deductions || ''}
-                onChange={(e) => setDeductions(Number(e.target.value))}
+                value={deductions > 0 ? formatThousands(deductions) : ''}
+                onChange={(e) => setDeductions(parseThousands(e.target.value))}
                 className="w-full bg-[#1a0f30] border border-purple-500/30 text-rose-400 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 font-mono font-bold"
               />
             </div>
