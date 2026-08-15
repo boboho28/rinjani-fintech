@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, CandlestickChart, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { TradingJournalItem, TradingPair, TradingType, TradingStrategy, TradingResultStatus, AccountType } from '../types';
-import { formatRupiah } from '../utils/formatters';
+import { formatRupiah, formatThousands, parseThousands } from '../utils/formatters';
 import { GLOBAL_RATES } from '../utils/rates';
 
 interface AddTradingModalProps {
@@ -157,9 +157,36 @@ export const AddTradingModal: React.FC<AddTradingModalProps> = ({
               <span className="text-[10px] text-purple-400/70 font-mono">Real-time: 1 USD = Rp {GLOBAL_RATES.USD_IDR.toLocaleString()}</span>
             </div>
             <div className="grid grid-cols-3 gap-2.5">
-              <div><label className="block text-[10px] font-orbitron text-purple-400/80 mb-1">USD ($)</label><input type="number" step="0.01" value={profitUSDInput} onChange={(e) => handleUSDChange(parseFloat(e.target.value) || 0)} className="w-full bg-[#1a0f30] border border-emerald-500/40 rounded-xl px-2.5 py-2 text-xs font-mono font-bold text-emerald-300" /></div>
-              <div><label className="block text-[10px] font-orbitron text-purple-400/80 mb-1">Kurs IDR</label><input type="number" value={exchangeRate} onChange={(e) => handleRateChange(parseFloat(e.target.value) || 16000)} className="w-full bg-[#1a0f30] border border-purple-500/30 rounded-xl px-2.5 py-2 text-xs font-mono text-purple-200" /></div>
-              <div><label className="block text-[10px] font-orbitron text-purple-400/80 mb-1">Hasil (IDR)</label><input type="number" value={profitAmountInput} onChange={(e) => handleIDRChange(parseFloat(e.target.value) || 0)} className={`w-full bg-[#1a0f30] border rounded-xl px-2.5 py-2 text-xs font-mono font-bold ${type === 'profit' ? 'text-emerald-400 border-emerald-500/40' : 'text-rose-400 border-rose-500/40'}`} /></div>
+              <div>
+                <label className="block text-[10px] font-orbitron text-purple-400/80 mb-1">USD ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={profitUSDInput}
+                  onChange={(e) => handleUSDChange(parseFloat(e.target.value) || 0)}
+                  className="w-full bg-[#1a0f30] border border-emerald-500/40 rounded-xl px-2.5 py-2 text-xs font-mono font-bold text-emerald-300"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-orbitron text-purple-400/80 mb-1">Kurs IDR</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={exchangeRate > 0 ? formatThousands(exchangeRate) : ''}
+                  onChange={(e) => handleRateChange(parseThousands(e.target.value) || 16000)}
+                  className="w-full bg-[#1a0f30] border border-purple-500/30 rounded-xl px-2.5 py-2 text-xs font-mono text-purple-200"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-orbitron text-purple-400/80 mb-1">Hasil (IDR)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={profitAmountInput > 0 ? formatThousands(profitAmountInput) : ''}
+                  onChange={(e) => handleIDRChange(parseThousands(e.target.value) || 0)}
+                  className={`w-full bg-[#1a0f30] border rounded-xl px-2.5 py-2 text-xs font-mono font-bold ${type === 'profit' ? 'text-emerald-400 border-emerald-500/40' : 'text-rose-400 border-rose-500/40'}`}
+                />
+              </div>
             </div>
             <div className="bg-[#1d1136] p-2 rounded-lg text-center text-xs font-mono"><span className={type === 'profit' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>{type === 'profit' ? '+' : '-'}${profitUSDInput.toFixed(2)} USD = {type === 'profit' ? '+' : '-'}{formatRupiah(profitAmountInput)}</span></div>
           </div>
