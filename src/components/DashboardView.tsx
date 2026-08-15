@@ -164,7 +164,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-1.5 bg-[#140b24] border border-purple-500/40 px-2.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.18)]">
             <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" />
             <span className="font-orbitron font-bold text-[9px] sm:text-[11px] text-purple-200 tracking-wider">
-              DASHBOARD RINJANI
+              DASHBOARD MONEY DENDA GIANA
             </span>
           </div>
           <span className="px-2 py-0.5 text-[8px] sm:text-[9px] font-orbitron font-bold bg-purple-500/20 text-purple-200 border border-purple-500/35 rounded-full">
@@ -175,7 +175,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10 my-1">
           <div className="space-y-0.5">
             <h1 className="font-orbitron font-black text-xl sm:text-3xl lg:text-4xl tracking-widest leading-none text-cyber-gold drop-shadow-[0_2px_8px_rgba(217,70,239,0.35)]">
-              RINJANI SYSTEM
+              MONEY DENDA GIANA
             </h1>
             <p className="text-[9px] sm:text-[11px] font-rajdhani font-bold text-purple-200/80 tracking-wider uppercase">
               Security Active
@@ -185,7 +185,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-2.5 shrink-0">
             <div className="relative w-10 h-10 sm:w-16 sm:h-16 rounded-full border border-purple-500/40 flex items-center justify-center bg-purple-500/10 shadow-[0_0_15px_rgba(217,70,239,0.25)]">
               <div className="w-7 h-7 sm:w-12 sm:h-12 rounded-full bg-gradient-to-b from-purple-500 via-fuchsia-600 to-pink-600 flex items-center justify-center">
-                <span className="font-orbitron font-black text-lg sm:text-3xl text-white tracking-tighter">R</span>
+                <span className="font-orbitron font-black text-xs sm:text-base text-white tracking-tighter">MDG</span>
               </div>
             </div>
             <div className="bg-purple-500/20 text-fuchsia-300 border border-purple-500/40 px-2 py-0.5 rounded font-mono text-[9px] sm:text-[10px]">v2.5 NEON</div>
